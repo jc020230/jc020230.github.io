@@ -108,7 +108,7 @@ window.SITE_DATA = {
       },
       {
         "ko": "생체신호 데이터",
-        "en": "bio signal data"
+        "en": "Bio-Signal Data"
       }
     ]
   },
