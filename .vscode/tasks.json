@@ -1,0 +1,58 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "홈페이지 미리보기 (8000)",
+      "type": "process",
+      "command": "python3",
+      "args": [
+        "${workspaceFolder}/tools/serve.py"
+      ],
+      "windows": {
+        "command": "py",
+        "args": [
+          "-3",
+          "${workspaceFolder}/tools/serve.py"
+        ]
+      },
+      "isBackground": true,
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "홈페이지 데이터 검사 (Node.js 필요)",
+      "type": "process",
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/tools/check.mjs"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "SEO 메타데이터 동기화 (Node.js 필요)",
+      "type": "process",
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/tools/sync-meta.mjs"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "공개 준비 검사 (예시 데이터 차단)",
+      "type": "process",
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/tools/check.mjs",
+        "--release"
+      ],
+      "problemMatcher": []
+    }
+  ]
+}
