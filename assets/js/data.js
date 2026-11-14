@@ -80,8 +80,8 @@ window.SITE_DATA = {
   },
   "about": {
     "headline": {
-      "ko": "소리를 이해하는 AI를 연구합니다.",
-      "en": "Researching AI that understands sound."
+      "ko": "음성을 이해하는 AI를 연구합니다.",
+      "en": "Researching AI that understands Audio."
     },
     "paragraphs": [
       {
