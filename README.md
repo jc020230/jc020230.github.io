@@ -6,7 +6,7 @@
 - 홈페이지: https://jc020230.github.io/
 - 저장소: https://github.com/jc020230/jc020230.github.io
 - 최신 작업 폴더: `jc020230.github.io` (원격 저장소와 연결된 Git 작업본).
-- 이전 `researcher-site`, `researcher-site-news-update`, 원본 ZIP은 보존했습니다. 이후 수정은 최신 작업 폴더에서 진행하세요.
+- 이전 작업본과 교수님 예제는 `../website-reference/`에 보관합니다. 이후 수정은 이 Git 폴더에서만 진행하세요.
 - GitHub Pages는 `main` 브랜치의 루트에서 배포합니다.
 
 ## 콘텐츠와 근거
@@ -81,7 +81,6 @@ node tools/check.mjs --release
 python -m pip install playwright
 python -m playwright install chromium
 python tools/browser_check.py
-python tools/profile_check.py
 ```
 
 axe-core 파일이 있으면 `python tools/browser_check.py --axe /path/to/axe.min.js`로 접근성 자동 검사도 수행할 수 있습니다. 결과는 Git에서 제외된 `.preview/`에 저장됩니다. 브라우저 검사의 검색어·실적 개수는 현재 프로필 기준이므로 연구 실적을 추가하면 해당 기대값도 갱신하세요. 검사 도구는 서버를 직접 시작하고 종료합니다.
@@ -107,3 +106,11 @@ git push origin main
 ```
 
 원격 변경이 있다면 내용을 비교·통합한 다음 push합니다. 강제 push는 사용하지 않습니다. Git 작성자 정보가 없다면 본인의 이름과 이메일로 설정합니다. GitHub Settings → Pages → Deploy from a branch → main → /(root)가 현재 배포 설정입니다. 공개 전에 변경 내용을 검토하고, 배포 후 공개 URL의 파일·언어 전환을 확인하세요.
+
+## 최소 구성과 참고 자료
+
+공개 사이트는 `index.html`, `cv.html`, `assets/` 및 Pages·SEO 파일로 동작합니다. `tools/`의 4개 스크립트는 미리보기·데이터 검사·SEO 동기화·브라우저 검사에만 사용합니다. npm이나 빌드 설치는 필요 없습니다.
+
+[Charles Emogor의 프로젝트 페이지](https://charlesemogor.com/projects)와 교수님이 제공한 정적 HTML 예제를 참고하여 프로젝트를 실제 연구 사진과 함께 표시합니다. 이미지 파일을 복제하지 않고 기존 활동 사진 경로를 재사용합니다. `projects[].image`와 `imageAlt`에서 사진·설명을 수정할 수 있습니다. 사용자가 수정한 생체신호 데이터 관심 분야는 유지합니다.
+
+생성된 `.preview/`, Python 캐시, 임시 브라우저·라이브러리는 정리했습니다. 브라우저 검사를 다시 실행하려면 README의 선택적 Playwright 설치가 필요합니다. 자료 ZIP·이전 작업본은 배포 폴더 바깥 `../website-reference/`에 있습니다. `.git`은 변경 이력이므로 삭제하지 마세요.

@@ -98,6 +98,8 @@ arr(data.publications).forEach((paper, i) => {
   Object.entries(paper.links || {}).forEach(([key, url]) => checkURL(url, `${at}.links.${key}`));
 });
 arr(data.projects).forEach((project, i) => {
+  checkURL(project.image, `projects[${i}].image`);
+  if (project.image) localized(project.imageAlt, `projects[${i}].imageAlt`);
   for (const key of ["title", "description", "category", "status"]) localized(project[key], `projects[${i}].${key}`);
   Object.entries(project.links || {}).forEach(([key, url]) => checkURL(url, `projects[${i}].links.${key}`));
 });

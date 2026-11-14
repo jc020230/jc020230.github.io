@@ -414,3 +414,10 @@ body:has(.photo-dialog[open]) { overflow: hidden; }
   a { color: inherit; }
   .photo-dialog, .gallery-grid, .photo-preview { display: none !important; }
 }
+
+/* Photo-led projects: reuse the research photos already shipped with the site. */
+.project-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; }
+.project-card { padding-top: 0; border-bottom: 0; }
+.project-image { width: 100%; height: 260px; object-fit: contain; background: var(--highlight); border-radius: 8px; margin-bottom: 20px; }
+@media (max-width: 600px) { .project-grid { grid-template-columns: 1fr; } .project-image { height: 300px; } }
+@media print { .project-image { display: none; } }

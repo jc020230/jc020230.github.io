@@ -416,6 +416,8 @@ window.SITE_DATA = {
     {
       "example": false,
       "id": "dcase-adqa",
+      "image": "./assets/images/activity/dcase-presentation.webp",
+      "imageAlt": {"ko": "DCASE 워크숍 CAU 팀 발표", "en": "CAU team presentation at the DCASE workshop"},
       "number": "01",
       "category": {
         "ko": "공동 연구",
@@ -441,6 +443,8 @@ window.SITE_DATA = {
     {
       "example": false,
       "id": "als-assessment",
+      "image": "./assets/images/activity/statistics-poster.webp",
+      "imageAlt": {"ko": "음성 기반 ALS 연구 포스터 발표", "en": "Poster presentation of speech-based ALS research"},
       "number": "02",
       "category": {
         "ko": "음성 분석",

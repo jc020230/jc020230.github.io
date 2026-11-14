@@ -149,7 +149,7 @@
     $("#brand").href = isCV ? `./index.html?lang=${state.language}` : "#top";
     $("#brand").setAttribute("aria-label", `${text(data.profile.name)} · ${t("home")}`);
     if (!isCV) {
-      $("#primary-nav").innerHTML = ["about", "challenges", "news", "publications", "gallery", "contact", "cv"].map((id) =>
+      $("#primary-nav").innerHTML = ["about", "challenges", "news", "publications", "projects", "gallery", "contact"].map((id) =>
         `<a href="#${id}" data-nav="${id}">${e(t(id))}</a>`
       ).join("");
       $("#primary-nav").setAttribute("aria-label", t("navLabel"));
@@ -279,7 +279,7 @@
 
   function renderProjects() {
     $("#projects").innerHTML = `${sectionHeading("projects", "projects", "projectsDescription")}
-      <div class="project-grid">${list(data.projects).map((p) => `<article class="project-card"><div class="project-top"><span class="project-number">${e(p.number)}</span><span class="project-category">${htmlText(p.category)}</span></div><h3>${htmlText(p.title)}</h3><p>${htmlText(p.description)}</p><div class="project-tags">${list(p.tags).map((tag) => `<span>${htmlText(tag)}</span>`).join("")}</div><div class="project-bottom"><span class="project-status">${htmlText(p.status)}</span><div>${resourceLinks(p.links)}</div></div></article>`).join("") || `<p class="empty-state">${e(t("noProjects"))}</p>`}</div>`;
+      <div class="project-grid">${list(data.projects).map((p) => `<article class="project-card">${safeURL(p.image) ? `<img class="project-image" src="${e(safeURL(p.image))}" alt="${htmlText(p.imageAlt)}" loading="lazy" width="800" height="600">` : ""}<div class="project-top"><span class="project-number">${e(p.number)}</span><span class="project-category">${htmlText(p.category)}</span></div><h3>${htmlText(p.title)}</h3><p>${htmlText(p.description)}</p><div class="project-tags">${list(p.tags).map((tag) => `<span>${htmlText(tag)}</span>`).join("")}</div><div class="project-bottom"><span class="project-status">${htmlText(p.status)}</span><div>${resourceLinks(p.links)}</div></div></article>`).join("") || `<p class="empty-state">${e(t("noProjects"))}</p>`}</div>`;
   }
   function timeline(items, level = 4) {
     return `<ol class="timeline">${list(items).map((item) => `<li><p class="timeline-period">${htmlText(item.period)}</p><div><h${level}>${htmlText(item.title)}</h${level}><p class="timeline-institution">${richText(item.institution)}</p><p class="timeline-description">${richText(item.description)}</p></div></li>`).join("") || `<li>${e(t("noEntries"))}</li>`}</ol>`;
