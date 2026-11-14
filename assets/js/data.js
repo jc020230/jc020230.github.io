@@ -107,8 +107,8 @@ window.SITE_DATA = {
         "en": "Audio Question Answering"
       },
       {
-        "ko": "음성 기반 ALS 평가",
-        "en": "Speech-based ALS Assessment"
+        "ko": "생체신호 데이터",
+        "en": "bio signal data"
       }
     ]
   },
