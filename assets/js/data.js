@@ -1,6 +1,8 @@
-/** 실제 연구자 정보. 텍스트 내 기관 링크: entities. 소식 자료 링크: resources.
- * 사진은 gallery의 행사별 images에서 관리합니다. 날짜는 YYYY-MM 또는 YYYY-MM-DD.
- * 수정 후 node tools/sync-meta.mjs 실행. */
+/** 홈페이지 내용은 이 파일에서 관리합니다.
+ * 논문·뉴스·사진·학력 등은 원본과 동일합니다. 소개 문구만 다듬었습니다.
+ * 이름/소속/소개는 첫 화면, 사진은 gallery, 메타데이터는 site에서 수정하세요.
+ * 수정 후 node tools/sync-meta.mjs 실행.
+ */
 window.SITE_DATA = {
   "site": {
     "url": "https://jc020230.github.io/",
@@ -9,7 +11,7 @@ window.SITE_DATA = {
     "updated": "2026-11-14",
     "title": {
       "ko": "연구 홈페이지",
-      "en": "Academic Portfolio"
+      "en": "Research homepage"
     },
     "description": {
       "ko": "류정찬 · 중앙대학교 통계데이터사이언스학과 석사과정. 오디오 질의응답, 오디오·비전·언어 모델과 음성 분석 연구.",
@@ -80,17 +82,17 @@ window.SITE_DATA = {
   },
   "about": {
     "headline": {
-      "ko": "음성을 이해하는 AI를 연구합니다.",
-      "en": "Researching AI that understands Audio."
+      "ko": "오디오 이해와 음성 분석",
+      "en": "Audio understanding and speech analysis"
     },
     "paragraphs": [
       {
-        "ko": "중앙대학교 일반대학원 통계데이터사이언스학과 석사과정 류정찬입니다. CAU ET Lab에서 곽일엽 교수님의 지도를 받고 있습니다.",
-        "en": "I am Jungchan Ryu, an M.S. student in Statistics and Data Science at Chung-Ang University, advised by Prof. Il-Youp Kwak at CAU ET Lab."
+        "ko": "중앙대학교 통계데이터사이언스학과 석사과정 류정찬입니다. CAU ET Lab에서 곽일엽 교수님의 지도를 받고 있습니다.",
+        "en": "I am an M.S. student in Statistics and Data Science at Chung-Ang University, advised by Prof. Il-Youp Kwak at CAU ET Lab."
       },
       {
-        "ko": "문헌정보학을 전공하고 응용통계학을 복수전공했습니다. 오디오 질의응답과 오디오·비전·언어 모델에 관심이 있으며, 음성을 활용한 ALS 평가 연구에도 참여하고 있습니다.",
-        "en": "I studied Library and Information Science with a double major in Applied Statistics. My interests include audio question answering and audio-vision-language models, and my research also includes speech-based ALS assessment."
+        "ko": "오디오 질의응답과 오디오·비전·언어 모델에 관심이 있습니다. 음성으로 ALS를 평가하는 연구에도 참여하고 있습니다. 학부에서는 문헌정보학을 전공하고 응용통계학을 복수전공했습니다.",
+        "en": "My interests are in audio question answering and audio-vision-language models. I also work on speech-based ALS assessment. Before graduate school, I studied Library and Information Science with a double major in Applied Statistics."
       }
     ],
     "interests": [
@@ -417,7 +419,10 @@ window.SITE_DATA = {
       "example": false,
       "id": "dcase-adqa",
       "image": "./assets/images/activity/dcase-presentation.webp",
-      "imageAlt": {"ko": "DCASE 워크숍 CAU 팀 발표", "en": "CAU team presentation at the DCASE workshop"},
+      "imageAlt": {
+        "ko": "DCASE 워크숍 CAU 팀 발표",
+        "en": "CAU team presentation at the DCASE workshop"
+      },
       "number": "01",
       "category": {
         "ko": "공동 연구",
@@ -444,7 +449,10 @@ window.SITE_DATA = {
       "example": false,
       "id": "als-assessment",
       "image": "./assets/images/activity/statistics-poster.webp",
-      "imageAlt": {"ko": "음성 기반 ALS 연구 포스터 발표", "en": "Poster presentation of speech-based ALS research"},
+      "imageAlt": {
+        "ko": "음성 기반 ALS 연구 포스터 발표",
+        "en": "Poster presentation of speech-based ALS research"
+      },
       "number": "02",
       "category": {
         "ko": "음성 분석",
@@ -601,12 +609,12 @@ window.SITE_DATA = {
   ],
   "contact": {
     "headline": {
-      "ko": "연구에 관한 대화를 환영합니다.",
-      "en": "Let’s talk about research."
+      "ko": "연락처",
+      "en": "Contact"
     },
     "text": {
-      "ko": "공동 연구, 프로젝트, 연구 내용에 관한 문의는 이메일로 보내주세요. 관심 있는 주제와 간단한 소개를 함께 보내주시면 좋습니다.",
-      "en": "For research collaborations, projects, or questions about my work, please get in touch by email with a brief introduction and your topic of interest."
+      "ko": "연구 관련 문의는 이메일로 부탁드립니다.",
+      "en": "For questions about my research, please email me."
     }
   },
   "entities": [

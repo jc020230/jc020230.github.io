@@ -24,7 +24,7 @@
     );
   const state = {
     language: initialLanguage(), query: "", year: "all", type: "all",
-    selected: false, expandedNews: false, openPanels: new Set()
+    selected: false, expandedNews: false, filtersOpen: false, openPanels: new Set()
   };
   let observer;
   let toastTimer;
@@ -121,7 +121,7 @@
   }
   function resourceLinks(links) {
     return Object.entries(links || {}).map(([kind, url]) =>
-      link(url, `${e(t(kind))} ${arrow}`, "resource-link")
+      link(url, e(t(kind)), "resource-link")
     ).filter(Boolean).join("");
   }
   function authorHTML(authors) {
@@ -145,13 +145,13 @@
     const demo = $("#demo-notice");
     demo.hidden = !hasExamples;
     demo.innerHTML = `<div class="demo-inner"><strong>${e(t("demo"))}</strong><span>${e(t("demoText"))}</span></div>`;
-    $("#brand").innerHTML = `<span class="brand-mark">${e(data.profile.initials || "R")}</span><span class="brand-name">${htmlText(data.profile.name)}<small>${e(t("portfolio"))}</small></span>`;
+    $("#brand").innerHTML = `<span class="brand-name">${htmlText(data.profile.name)}</span>`;
     $("#brand").href = isCV ? `./index.html?lang=${state.language}` : "#top";
     $("#brand").setAttribute("aria-label", `${text(data.profile.name)} · ${t("home")}`);
     if (!isCV) {
-      $("#primary-nav").innerHTML = ["about", "challenges", "news", "publications", "projects", "gallery", "contact"].map((id) =>
+      $("#primary-nav").innerHTML = ["about", "news", "publications", "projects", "challenges", "gallery"].map((id) =>
         `<a href="#${id}" data-nav="${id}">${e(t(id))}</a>`
-      ).join("");
+      ).join("") + link(cvURL(), "CV", "nav-cv");
       $("#primary-nav").setAttribute("aria-label", t("navLabel"));
       $("#profile").setAttribute("aria-label", text(data.profile.name));
     } else {
@@ -163,33 +163,31 @@
       button.setAttribute("aria-pressed", String(button.dataset.lang === state.language));
     });
     const year = new Date().getFullYear();
-    $("#site-footer").innerHTML = `<div><span>© ${year} ${htmlText(data.profile.name)}</span><span class="footer-motto">${e(t("footer"))}</span></div><div><span>${e(t("updated"))} ${e(formatDate(data.site.updated, true))}</span><a href="#top">${e(t("top"))} <span aria-hidden="true">↑</span></a></div>`;
+    $("#site-footer").innerHTML = `<div><span>© ${year} ${htmlText(data.profile.name)}</span></div><div><span>${e(t("updated"))} ${e(formatDate(data.site.updated, true))}</span><a href="#top">${e(t("top"))} <span aria-hidden="true">↑</span></a></div>`;
   }
 
   function renderProfile() {
     const p = data.profile;
     const photo = safeURL(p.photo);
-    $("#profile").innerHTML = `
-      <div class="portrait-frame">${photo ? `<img class="profile-photo" src="${e(photo)}" alt="${htmlText(p.photoAlt)}" width="480" height="520">` : `<div class="portrait-monogram" aria-hidden="true">${e(p.initials || "R")}</div>`}</div>
-      <div class="profile-info"><p class="profile-name">${htmlText(p.name)}</p>${p.example ? `<span class="example-label">${e(t("exampleProfile"))}</span>` : ""}<p class="profile-name-secondary">${htmlText(p.nameSecondary)}</p><p class="profile-role">${htmlText(p.role)}</p><p class="profile-affiliation">${htmlText(p.department)}<br>${richText(p.institution)}<br>${richText(p.lab)}</p><p class="profile-location"><span aria-hidden="true">◦</span> ${htmlText(p.location)}</p></div>
-      <div class="profile-links">${link(p.email ? `mailto:${p.email}` : "", e(p.email), "profile-email")}${list(p.links).map((item) => link(item.url, `${htmlText(item.label)} ${arrow}`, "social-link")).join("")}</div>
-      ${link(cvURL(), `${e(t("cv"))}<span aria-hidden="true">↗</span>`, "button cv-link")}`;
-    // Broken/removed photographs fall back to initials rather than a broken-image icon.
+    $("#profile").innerHTML = `<div class="portrait-frame">${photo ? `<img class="profile-photo" src="${e(photo)}" alt="${htmlText(p.photoAlt)}" width="336" height="396">` : `<div class="portrait-monogram" aria-hidden="true">${e(p.initials || "R")}</div>`}</div><p class="profile-location">${htmlText(p.location)}</p>`;
     const image = $(".profile-photo");
     image?.addEventListener("error", () => {
       const replacement = document.createElement("div");
       replacement.className = "portrait-monogram";
       replacement.textContent = p.initials || "R";
+      replacement.setAttribute("role", "img");
       replacement.setAttribute("aria-label", text(p.photoAlt));
       image.replaceWith(replacement);
     }, { once: true });
   }
 
   function renderAbout() {
-    $("#about").innerHTML = `<p class="eyebrow">AUDIO · LANGUAGE · LEARNING</p>
-      <h1 id="about-heading">${htmlText(data.about.headline).replace(/\n/g, "<br>")}</h1>
-      <div class="about-copy">${list(data.about.paragraphs).map((p) => `<p>${richText(p)}</p>`).join("")}</div>
-      <section class="interest-block" id="interests" aria-labelledby="interests-heading"><h2 class="small-label" id="interests-heading">${e(t("interests"))}</h2><ul class="interest-list">${list(data.about.interests).map((item) => `<li>${htmlText(item)}</li>`).join("")}</ul></section>`;
+    const p = data.profile;
+    $("#about-content").innerHTML = `<div class="name-line"><h1 id="about-heading">${htmlText(p.name)}</h1><span class="secondary-name">${htmlText(p.nameSecondary)}</span></div>
+      <p class="intro-affiliation">${htmlText(p.role)} · ${richText(p.institution)}</p>
+      <div class="about-copy">${list(data.about.paragraphs).map((paragraph) => `<p>${richText(paragraph)}</p>`).join("")}</div>
+      <div class="profile-links">${link(p.email ? `mailto:${p.email}` : "", e(p.email), "profile-email")}${list(p.links).map((item) => link(item.url, htmlText(item.label), "social-link")).join("")}${link(cvURL(), "CV", "cv-link")}</div>
+      <section class="interest-block" id="interests" aria-labelledby="interests-heading"><h2 id="interests-heading">${e(t("interests"))}</h2><ul class="interest-list">${list(data.about.interests).map((item) => `<li>${htmlText(item)}</li>`).join("")}</ul></section>`;
   }
 
   function renderNews() {
@@ -199,27 +197,26 @@
     $("#news").innerHTML = `${sectionHeading("news", "news")}
       <ol class="news-list" id="news-items">${visible.map((item) => {
         const photoIndex = galleryPhotos().findIndex((photo) => photo.event.id === item.galleryId);
-        const photo = galleryPhotos()[photoIndex];
-        return `<li><time datetime="${e(item.date)}">${e(formatDate(item.date))}</time><div class="news-content"><span class="news-category">${htmlText(item.category)}</span><p>${richText(item.text)}</p><div class="news-resources">${list(item.resources).map((resource) => link(resource.url, `${htmlText(resource.label)} ${arrow}`, "inline-link")).join("")}${safeURL(item.url) ? link(item.url, `${e(t("details"))} ${arrow}`, "inline-link") : ""}${photo ? `<button class="photo-preview" type="button" data-action="open-photo" data-photo="${photoIndex}"><img src="${e(safeURL(photo.src))}" alt="" width="80" height="60" loading="lazy"><span>${e(t("viewPhotos"))} <span aria-hidden="true">↗</span></span></button>` : ""}</div></div></li>`;
+        return `<li><time datetime="${e(item.date)}">${e(formatDate(item.date))}</time><div class="news-content"><p>${richText(item.text)}</p><div class="news-resources">${list(item.resources).map((resource) => link(resource.url, htmlText(resource.label), "inline-link")).join("")}${safeURL(item.url) ? link(item.url, e(t("details")), "inline-link") : ""}${photoIndex >= 0 ? `<button class="photo-preview text-button" type="button" data-action="open-photo" data-photo="${photoIndex}">${e(t("viewPhotos"))}</button>` : ""}</div></div></li>`;
       }).join("") || `<li class="empty-state">${e(t("noNews"))}</li>`}</ol>
-      ${news.length > limit ? `<button type="button" class="text-button news-toggle" data-action="toggle-news" aria-controls="news-items" aria-expanded="${state.expandedNews}">${e(t(state.expandedNews ? "newsLess" : "newsMore"))} <span aria-hidden="true">${state.expandedNews ? "↑" : "↓"}</span></button>` : ""}`;
+      ${news.length > limit ? `<button type="button" class="text-button news-toggle" data-action="toggle-news" aria-controls="news-items" aria-expanded="${state.expandedNews}">${e(t(state.expandedNews ? "newsLess" : "newsMore"))}</button>` : ""}`;
   }
 
   function renderChallenges() {
-    $("#challenges").innerHTML = `${sectionHeading("challenges", "challenges", "challengeIntro")}<div class="challenge-list">${list(data.awards).map((award) => `<article class="challenge-row"><div class="challenge-rank"><strong>${e(award.rank || award.year)}</strong><span>${e(award.year)}</span></div><div><p class="challenge-event">${htmlText(award.subtitle)}</p><h3>${htmlText(award.title)}</h3><p class="challenge-description">${htmlText(award.organization)}</p>${link(award.url, `${htmlText(award.linkLabel || t("details"))} ${arrow}`, "inline-link")}</div>${award.image ? link(award.image, `<img src="${e(safeURL(award.image))}" alt="${e(t("certificate"))}" width="140" height="105" loading="lazy">`, "challenge-certificate") : ""}</article>`).join("")}</div>`;
+    $("#challenges").innerHTML = `${sectionHeading("challenges", "challenges")}<div class="challenge-list">${list(data.awards).map((award) => `<article class="challenge-row"><div class="challenge-ranking"><strong class="challenge-rank${String(award.rank || "").length > 3 ? " challenge-rank-word" : ""}">${e(award.rank || "")}</strong><span class="challenge-year">${e(award.year)}</span></div><div class="challenge-content"><h3>${htmlText(award.title)}</h3><p class="challenge-description">${htmlText(award.organization)}</p>${link(award.url, htmlText(award.linkLabel || t("details")), "inline-link")}</div>${safeURL(award.image) ? link(award.image, `<img src="${e(safeURL(award.image))}" alt="${e(t("certificate"))}" width="140" height="105" loading="lazy">`, "challenge-certificate") : ""}</article>`).join("")}</div>`;
   }
 
   function renderGallery() {
-    $("#gallery").innerHTML = `${sectionHeading("gallery", "gallery", "galleryIntro")}<div class="gallery-grid">${list(data.gallery).map((event) => {
+    $("#gallery").innerHTML = `${sectionHeading("gallery", "gallery")}<div class="gallery-grid">${list(data.gallery).map((event) => {
       const index = galleryPhotos().findIndex((photo) => photo.event.id === event.id);
       const photo = list(event.images)[0];
       if (!photo) return "";
-      return `<figure class="gallery-item"><button type="button" class="gallery-image" data-action="open-photo" data-photo="${index}" aria-label="${e(t("viewPhotos"))}: ${htmlText(event.title)}"><img src="${e(safeURL(photo.src))}" alt="${htmlText(photo.alt)}" width="${e(photo.width)}" height="${e(photo.height)}" loading="lazy"><span class="photo-count">${event.images.length} ${e(t("photosCount"))} <span aria-hidden="true">↗</span></span></button><figcaption><time datetime="${e(event.date)}">${e(formatDate(event.date))}</time><h3>${richText(event.title)}</h3><p>${richText(event.description)}</p><small>${event.sourceUrl ? link(event.sourceUrl, htmlText(event.sourceLabel), "inline-link") : htmlText(event.sourceLabel)}</small></figcaption></figure>`;
+      return `<figure class="gallery-item"><button type="button" class="gallery-image" data-action="open-photo" data-photo="${index}" aria-label="${e(t("viewPhotos"))}: ${htmlText(event.title)}"><img src="${e(safeURL(photo.src))}" alt="${htmlText(photo.alt)}" width="${e(photo.width)}" height="${e(photo.height)}" loading="lazy"></button><figcaption><div class="gallery-meta"><time datetime="${e(event.date)}">${e(formatDate(event.date))}</time><span>${event.images.length} ${e(t("photosCount"))}</span></div><h3>${richText(event.title)}</h3><p>${richText(event.description)}</p><small>${event.sourceUrl ? link(event.sourceUrl, htmlText(event.sourceLabel), "inline-link") : htmlText(event.sourceLabel)}</small></figcaption></figure>`;
     }).join("")}</div>`;
   }
 
   function renderPublicationControls() {
-    $("#publications-intro").innerHTML = sectionHeading("publications", "publications", "pubDescription");
+    $("#publications-intro").innerHTML = sectionHeading("publications", "publications");
     const years = [...new Set(list(data.publications).map((p) => String(p.year)))].sort((a, b) => Number(b) - Number(a));
     $("#pub-year").innerHTML = `<option value="all">${e(t("allYears"))}</option>${years.map((year) => `<option value="${e(year)}">${e(year)}</option>`).join("")}`;
     $("#pub-type").innerHTML = `<option value="all">${e(t("allTypes"))}</option>${["conference", "journal", "preprint"].map((type) => `<option value="${type}">${e(t(type))}</option>`).join("")}`;
@@ -228,6 +225,7 @@
     $("#pub-search").value = state.query;
     $("#pub-search").placeholder = t("searchPlaceholder");
     $("#pub-selected").checked = state.selected;
+    $("#publication-tools").open = state.filtersOpen || Boolean(state.query || state.year !== "all" || state.type !== "all" || state.selected);
   }
 
   function filteredPublications() {
@@ -255,11 +253,11 @@
     const buttons = [];
     if (text(p.abstract)) buttons.push(`<button type="button" class="resource-link" data-action="toggle-panel" data-panel="${e(abstractId)}" aria-controls="${e(abstractId)}" aria-expanded="${state.openPanels.has(abstractId)}">${e(t("abstract"))}</button>`);
     if (p.bibtex) buttons.push(`<button type="button" class="resource-link" data-action="toggle-panel" data-panel="${e(bibId)}" aria-controls="${e(bibId)}" aria-expanded="${state.openPanels.has(bibId)}">BibTeX</button>`);
+    const level = compact ? 3 : 4;
     return `<article class="paper${compact ? " paper-compact" : ""}" data-paper-id="${e(p.id)}">
-      <div class="paper-meta"><span class="type-label">${e(t(p.type))}</span>${p.example ? `<span class="example-label">${e(t("example"))}</span>` : ""}${p.selected ? `<span class="selected-label"><span aria-hidden="true">✦</span> ${e(t("featured"))}</span>` : ""}${compact ? `<span>${e(p.year)}</span>` : ""}</div>
-      <h3 class="paper-title">${title}</h3><p class="paper-authors">${authorHTML(p.authors)}</p>
+      ${compact ? `<p class="paper-meta">${e(p.year)} · ${e(t(p.type))}</p>` : ""}${p.example ? `<span class="example-label">${e(t("example"))}</span>` : ""}
+      <h${level} class="paper-title">${title}</h${level}><p class="paper-authors">${authorHTML(p.authors)}</p>
       <p class="paper-venue">${htmlText(p.venue)}${text(p.note) ? `<span class="paper-note">${htmlText(p.note)}</span>` : ""}</p>
-      ${!compact && list(p.tags).length ? `<div class="paper-tags">${p.tags.map((tag) => `<span>${htmlText(tag)}</span>`).join("")}</div>` : ""}
       <div class="paper-actions">${resourceLinks(p.links)}${compact ? "" : buttons.join("")}</div>
       ${!compact && text(p.abstract) ? `<div class="publication-panel abstract-panel" id="${e(abstractId)}"${state.openPanels.has(abstractId) ? "" : " hidden"}><p>${htmlText(p.abstract)}</p></div>` : ""}
       ${!compact && p.bibtex ? `<div class="publication-panel bib-panel" id="${e(bibId)}"${state.openPanels.has(bibId) ? "" : " hidden"}><div class="bib-panel-heading"><span>BibTeX</span><button type="button" class="text-button" data-action="copy-bibtex" data-id="${e(p.id)}">${e(t("copy"))}</button></div><pre tabindex="0"><code>${e(p.bibtex)}</code></pre></div>` : ""}
@@ -278,8 +276,8 @@
   }
 
   function renderProjects() {
-    $("#projects").innerHTML = `${sectionHeading("projects", "projects", "projectsDescription")}
-      <div class="project-grid">${list(data.projects).map((p) => `<article class="project-card">${safeURL(p.image) ? `<img class="project-image" src="${e(safeURL(p.image))}" alt="${htmlText(p.imageAlt)}" loading="lazy" width="800" height="600">` : ""}<div class="project-top"><span class="project-number">${e(p.number)}</span><span class="project-category">${htmlText(p.category)}</span></div><h3>${htmlText(p.title)}</h3><p>${htmlText(p.description)}</p><div class="project-tags">${list(p.tags).map((tag) => `<span>${htmlText(tag)}</span>`).join("")}</div><div class="project-bottom"><span class="project-status">${htmlText(p.status)}</span><div>${resourceLinks(p.links)}</div></div></article>`).join("") || `<p class="empty-state">${e(t("noProjects"))}</p>`}</div>`;
+    $("#projects").innerHTML = `${sectionHeading("projects", "projects")}
+      <div class="project-grid">${list(data.projects).map((p) => `<article class="project-card"><h3>${htmlText(p.title)}</h3><p>${htmlText(p.description)}</p><div class="project-bottom"><span class="project-status">${htmlText(p.status)}</span><div>${resourceLinks(p.links)}</div></div></article>`).join("") || `<p class="empty-state">${e(t("noProjects"))}</p>`}</div>`;
   }
   function timeline(items, level = 4) {
     return `<ol class="timeline">${list(items).map((item) => `<li><p class="timeline-period">${htmlText(item.period)}</p><div><h${level}>${htmlText(item.title)}</h${level}><p class="timeline-institution">${richText(item.institution)}</p><p class="timeline-description">${richText(item.description)}</p></div></li>`).join("") || `<li>${e(t("noEntries"))}</li>`}</ol>`;
@@ -294,10 +292,10 @@
       `;
   }
   function renderCVLink() {
-    $("#cv").innerHTML = `${sectionHeading("cv", "cvTitle")}<p class="section-description">${e(t("cvDescription"))}</p><div class="contact-actions">${link(`./cv.html?lang=${state.language}`, `${e(t("cv"))} ${arrow}`, "button")}${safeURL(data.profile.cvUrl) ? link(data.profile.cvUrl, `${e(t("downloadCV"))} ${arrow}`, "text-link") : ""}</div>`;
+    $("#cv").innerHTML = `${sectionHeading("cv", "cvTitle")}<div class="contact-actions">${link(`./cv.html?lang=${state.language}`, e(t("cv")), "text-link")}${safeURL(data.profile.cvUrl) ? link(data.profile.cvUrl, e(t("downloadCV")), "text-link") : ""}</div>`;
   }
   function renderContact() {
-    $("#contact").innerHTML = `<p class="eyebrow">${e(t("contact"))}</p><h2 id="contact-heading">${htmlText(data.contact?.headline)}</h2><p>${htmlText(data.contact?.text)}</p><div class="contact-actions">${link(data.profile.email ? `mailto:${data.profile.email}` : "", `${e(t("sendEmail"))} ${arrow}`, "button button-primary")}${data.profile.email ? `<button type="button" class="text-button" data-action="copy-email">${e(t("copyEmail"))}</button>` : ""}</div><div class="contact-links">${list(data.profile.links).map((item) => link(item.url, `${htmlText(item.label)} ${arrow}`)).join("")}</div>`;
+    $("#contact").innerHTML = `${sectionHeading("contact", "contact")}<p>${htmlText(data.contact?.text)}</p><div class="contact-actions">${link(data.profile.email ? `mailto:${data.profile.email}` : "", e(data.profile.email), "text-link")}${data.profile.email ? `<button type="button" class="text-button copy-email" data-action="copy-email">${e(t("copyEmail"))}</button>` : ""}</div>`;
   }
 
   function renderCV() {
@@ -325,13 +323,16 @@
         });
       }
     }, { rootMargin: "-10% 0px -65% 0px", threshold: 0 });
-    $$(".main-column > section").forEach((section) => observer.observe(section));
+    $$("[data-nav]").forEach((node) => {
+      const section = document.getElementById(node.dataset.nav);
+      if (section) observer.observe(section);
+    });
   }
   function setMenu(open) {
     const button = $("#menu-toggle");
     if (!button) return;
     button.setAttribute("aria-expanded", String(open));
-    $(".sr-only", button).textContent = t(open ? "closeMenu" : "menu");
+    $(".menu-label", button).textContent = t(open ? "closeMenu" : "menu");
     $("#primary-nav").classList.toggle("is-open", open);
   }
   function render() {
@@ -441,7 +442,8 @@
     }
   });
   if (!isCV) {
-    window.matchMedia("(max-width: 1050px)").addEventListener("change", () => setMenu(false));
+    window.matchMedia("(max-width: 760px)").addEventListener("change", () => setMenu(false));
+    $("#publication-tools").addEventListener("toggle", (event) => { state.filtersOpen = event.target.open; });
     $("#publication-filters").addEventListener("submit", (event) => event.preventDefault());
     $("#pub-search").addEventListener("input", (event) => { state.query = event.target.value; renderPublications(); });
     $("#pub-year").addEventListener("change", (event) => { state.year = event.target.value; renderPublications(); });

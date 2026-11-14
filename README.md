@@ -1,81 +1,72 @@
-# 류정찬 · 개인 연구 홈페이지
+# Jungchan Ryu — 개인 연구 홈페이지
 
-중앙대학교 통계데이터사이언스학과 석사과정 류정찬(Jungchan Ryu)의 실제 학술 이력을 정리한 한·영 홈페이지입니다. 예시 인물이나 가상 연구 실적을 사용하지 않습니다.
+HTML, CSS, JavaScript로 만든 한·영 정적 홈페이지입니다. 내용은 `assets/js/data.js`에서 관리하며 빌드나 npm 설치가 필요하지 않습니다.
 
-- 이메일: jungchan0202@cau.ac.kr
-- 홈페이지: https://jc020230.github.io/
-- 저장소: https://github.com/jc020230/jc020230.github.io
-- 최신 작업 폴더: `jc020230.github.io` (원격 저장소와 연결된 Git 작업본).
-- 이전 작업본과 교수님 예제는 `../website-reference/`에 보관합니다. 이후 수정은 이 Git 폴더에서만 진행하세요.
-- GitHub Pages는 `main` 브랜치의 루트에서 배포합니다.
+## 현재 작업본
 
-## 콘텐츠와 근거
+실제 수정·배포 폴더는 `/Data2/data/jc25/jc020230.github.io`입니다. 내용은 `assets/js/data.js`에서 관리합니다. 기존 Git 이력을 유지합니다.
 
-학력·학생 대표 활동·학부연구생 이력은 사용자가 제공했습니다. 출생 연도·고등학교·군 복무는 사용자 요청으로 제외했습니다. 학회 소식의 직접 발표는 사용자가 확인한 사실로 유지합니다. 세미나 소식은 사용자가 제공한 업데이트의 실제 활동 기록입니다.
+상단 프로젝트 메뉴와 큰 수상 순위 표시를 포함한 간결한 디자인입니다. 순위는 `awards[].rank`에서, 크기는 CSS의 `.challenge-rank`에서 수정합니다. 운영체제 기본 글꼴을 사용하므로 외부 폰트 서비스나 폰트 파일이 필요하지 않습니다.
 
-공개 자료와 첨부 자료를 함께 참고합니다.
+## 로컬 실행
 
-- [CAU ET 학생 소개](https://ikwak2.github.io/students/index.html): 소속과 관심 분야
-- [CAU ET 연구 소식](https://ikwak2.github.io/index.html): 논문·팀 성과
-- [ALS 벤치마크 학술지 원문](https://www.kjas.or.kr/journal/view.html?uid=278&vmd=Full): 2026-10-31 발행, 39(5), 537–552, DOI 10.5351/KJAS.2026.39.5.537
-- [ALS 하이브리드 특징 논문](https://doi.org/10.5351/KJAS.2026.39.4.401): 39(4), 401–417
-- [DCASE 워크숍 논문](https://dcase.community/documents/workshop2026/proceedings/DCASE2026Workshop_Jun_36.pdf)
-- [DCASE 공식 순위](https://dcase.community/challenge2026/task-audio-dependent-question-answering-results): Overall 58.33%, Lightweight 57.30%, 두 부문 1위
-- 사용자 제공 `이력서.hwpx`: 학회·세미나 사진 5장. 행사 포스터에서 2026-11-06 세미나 날짜를 확인했습니다. 원본 이력서 파일은 공개 저장소에 포함하지 않습니다.
-- [CAU ET Lab 사진](https://ikwak2.github.io/photos/index.html): DCASE 사진은 사용자 요청에 따라 ‘CAU 팀 발표’로 표기합니다.
-- `assets/files/dcase-2026-task5-judges-award.webp`: 공동 수상 상장
-- `assets/files/korean-statistical-society-2026-als-abstract.pdf`: 프로시딩 인쇄 페이지 124의 1페이지 발췌본
+VS Code에서 `index.html`이 바로 보이는 프로젝트 루트를 엽니다.
 
-## 로컬 미리보기
+Windows:
+
+```powershell
+py -3 tools/serve.py
+```
+
+Linux/macOS:
 
 ```bash
 python3 tools/serve.py
 ```
 
-Windows에서는 `py -3 tools/serve.py`를 사용할 수 있습니다. 브라우저에서 `http://127.0.0.1:8000/`을 열고, 종료할 때 Ctrl+C를 누릅니다. VS Code의 Terminal → Run Task에서도 미리보기·검사·SEO 동기화를 실행할 수 있습니다.
+브라우저에서 `http://127.0.0.1:8000/`을 엽니다. 종료는 `Ctrl+C`입니다. Python 없이 `index.html`을 직접 열 수도 있지만, 게시 환경과 비슷하게 보려면 로컬 서버를 사용하세요.
 
-웹사이트는 HTML/CSS/JavaScript 정적 파일만 사용합니다. 방문자에게 Python·Node.js·npm 설치가 필요하지 않습니다. Python은 미리보기, Node.js는 관리 도구에만 사용합니다.
+## 내용 수정
 
-## 데이터 수정
+| 내용 | 파일/항목 |
+| --- | --- |
+| 이름·소속·이메일·프로필 사진 | `assets/js/data.js`의 `profile` |
+| 소개 문단·관심 분야 | `about.paragraphs`, `about.interests` |
+| 소식 | `news` |
+| 논문 | `publications` |
+| 수상 | `awards` |
+| 프로젝트 | `projects` |
+| 학회·세미나 사진 | `gallery` |
+| 학력·경력 | `education`, `experience` |
+| 메뉴·버튼 번역 | `assets/js/i18n.js` |
+| 색상·글자 크기·화면 폭 | `assets/css/style.css` |
 
-`assets/js/data.js`에서 프로필·소개·관심 분야·소식·논문·프로젝트·학력·경력·수상·사진·연락처를 관리합니다. 번역은 `{ko: "한국어", en: "English"}`이며, 논문 원제처럼 번역이 필요 없는 항목은 문자열을 사용할 수 있습니다.
+`{ko: "한국어", en: "English"}` 형태로 두 언어를 함께 입력합니다. 논문 제목은 원문 문자열을 그대로 사용할 수 있습니다. 주소를 빈 문자열로 두면 해당 링크는 표시하지 않습니다.
 
-소식 날짜는 확인된 정밀도로 입력합니다.
+소개 영역의 큰 제목은 `profile.name`입니다. 이전 데이터 형식과의 호환을 위해 `about.headline`은 남겨두었지만 현재 디자인에서 슬로건으로 표시하지 않습니다.
 
-- `2026-09`: 월만 아는 소식. 내부 날짜값과 HTML의 `datetime`도 월 단위를 유지합니다.
-- `2026-11-06`: 정확한 일자를 아는 소식.
-- `site.updated`는 실제 수정일인 `YYYY-MM-DD` 형식으로 입력합니다.
+연구 관심 분야는 배지가 아닌 한 줄 텍스트로 표시합니다. 논문의 `selected`, `tags`, `type` 데이터는 검색·필터에 계속 사용합니다. 모든 논문에 ‘주요 논문’ 장식을 붙이지는 않습니다.
 
-소식은 날짜 내림차순으로 표시하며 처음 5개 이후는 펼쳐 볼 수 있습니다. 표시 개수는 `site.newsLimit`에서 바꿉니다. 같은 달에서 일자가 없는 소식은 정확한 일자 순서를 뜻하지 않습니다.
+## 검색·사진·CV
 
-`entities`에는 본문에서 각각 연결할 이름(`labels`)과 주소(`url`)를 등록합니다. 예를 들어 CAU ET Lab과 DLmath Lab은 같은 문장에서도 서로 다른 링크가 됩니다. 본문에 HTML을 넣지 마세요. 소식의 `resources`에는 `{label: {ko, en}, url}` 형태로 논문·상장 등 별도 자료 링크를 추가하고, `galleryId`에 연결할 사진 행사의 `id`를 적습니다.
+- 논문 우측 **검색 · 필터**를 펼치면 기존 검색, 연도·유형·주요 논문 필터를 사용할 수 있습니다.
+- News의 **이전 소식 보기**로 나머지 소식을 펼칩니다.
+- 사진 링크나 썸네일은 원본 비율의 확대 창을 엽니다. 좌우 방향키로 이동하고 Esc로 닫습니다.
+- CV는 같은 데이터에서 생성됩니다. 상단 **인쇄 / PDF 저장**으로 브라우저 인쇄 기능을 사용합니다.
+- `?lang=ko`, `?lang=en`으로 언어를 지정할 수 있습니다. 기존 언어 선택 저장 기능을 유지했습니다.
 
-논문은 고유 `id`, 숫자 `year`, `type`(conference/journal/preprint), `selected`, 제목·저자·학회/학술지·초록·태그·링크·BibTeX로 구성합니다. 저자의 `me: true`는 본인 이름 강조 표시입니다. 검색은 두 언어와 여러 단어를 지원하고, 연도·유형·주요 논문 필터를 조합할 수 있습니다.
+## 정적 검사
 
-`links.pdf`, `paper`, `code`, `project`, `slides`, `data`에 실제 주소를 입력합니다. 빈 문자열은 버튼을 숨깁니다. 제공되지 않은 초록·코드·BibTeX를 임의로 채우지 마세요. 로컬 파일은 `./assets/...` 상대 경로를 사용합니다.
-
-Challenge·수상은 `awards`에서 관리합니다. `rank`는 1st·4th·Award 등의 강조 표기, `subtitle`은 대회명, `title`은 성과, `organization`은 설명입니다. `url`과 `linkLabel`은 공식 순위·상장·대회 홈페이지 등 실제 연결 대상에 맞춰 입력하고, 상장 미리보기가 있으면 `image`를 지정합니다. 홈페이지와 CV가 같은 수상 데이터를 사용합니다.
-
-행사 사진은 `gallery`에 추가합니다. 각 행사는 고유 `id`, `date`, `title`, `description`, `sourceLabel`, 선택적 `sourceUrl`, `images` 배열을 가집니다. 각 사진에는 `src`, 한·영 `alt`, 실제 `width`·`height`를 입력합니다. 이미지 파일은 `assets/images/activity/`에 저장합니다. 사진 출처는 해당 폴더의 README를 참고하세요. 썸네일을 누르면 확대되고, 이전·다음 버튼이나 좌우 방향키로 전체 사진을 탐색하며 Esc로 닫습니다.
-
-사진은 `profile.photo`, 기존 CV PDF는 `profile.cvUrl`로 지정합니다. HTML CV는 같은 데이터를 공유하며 브라우저에서 인쇄/PDF 저장이 가능합니다. 학력과 경력은 입력 순서를 유지합니다.
-
-글꼴은 Pretendard Variable v1.3.9를 `assets/fonts/`에서 직접 제공합니다. 외부 폰트 서비스에 접속하지 않습니다. 재배포 시 동봉된 `OFL.txt`를 유지하세요. 색상·여백·타이포그래피는 `assets/css/style.css`에서 수정합니다.
-
-`example`과 `showDemoNotice`는 향후 예시 콘텐츠를 추가할 때를 위한 보호 기능입니다. 현재 실제 데이터에서는 모두 false입니다. 기록을 삭제하지 않고 예시 표시만 바꾸는 용도가 아닙니다.
-
-## 수정 후 검사
-
-Node.js가 설치된 터미널에서 실행합니다. npm 설치는 필요 없습니다.
+Node.js가 설치된 터미널에서 다음 명령을 실행합니다.
 
 ```bash
 node tools/sync-meta.mjs
 node tools/check.mjs --release
 ```
 
-동기화 도구는 기본 언어의 HTML 제목·설명·Open Graph·canonical·robots·sitemap을 갱신합니다. 검사 도구는 문법·날짜·번역·논문 ID·로컬 파일·URL 형식·메타데이터 동기화 및 예시 데이터 잔존 여부를 확인합니다. 실제 이력의 진위를 자동 판정하지 않습니다.
+첫 명령은 `data.js`의 내용으로 HTML 메타데이터를 갱신합니다. 두 번째는 문법, 데이터, 번역, 내부 파일 경로, 메타데이터를 검사합니다. 외부 논문의 실재 여부나 원격 사이트의 응답까지 검증하지는 않습니다.
 
-실제 콘텐츠 기준 브라우저 검사:
+브라우저 검사는 선택 사항입니다. 홈페이지 실행에는 필요하지 않습니다.
 
 ```bash
 python -m pip install playwright
@@ -83,34 +74,25 @@ python -m playwright install chromium
 python tools/browser_check.py
 ```
 
-axe-core 파일이 있으면 `python tools/browser_check.py --axe /path/to/axe.min.js`로 접근성 자동 검사도 수행할 수 있습니다. 결과는 Git에서 제외된 `.preview/`에 저장됩니다. 브라우저 검사의 검색어·실적 개수는 현재 프로필 기준이므로 연구 실적을 추가하면 해당 기대값도 갱신하세요. 검사 도구는 서버를 직접 시작하고 종료합니다.
+시스템 Chromium을 지정하려면 `--executable /path/to/chromium`을 추가합니다. 로컬 URL 탐색이 차단된 검사 환경에서는 `--inline`을 사용할 수 있지만, 이 방식은 실제 브라우저 HTTP 로딩·URL 이동·저장된 언어의 재방문 동작을 검증하지 못합니다. 검사 결과와 스크린샷은 `.preview/`에 생성되며 Git에서는 제외됩니다. 이번 검증 범위는 `TEST_REPORT.md`에 기록했습니다.
 
-## GitHub Pages 배포
+## 기존 GitHub Pages 업데이트
 
-`jc020230.github.io` 폴더는 이미 Git 저장소이며, `origin`은 `https://github.com/jc020230/jc020230.github.io.git`입니다. `git init`이나 원격 재등록은 필요하지 않습니다. 원격에 새로운 커밋이 있다면 fetch하여 변경을 비교합니다.
-
-이 폴더를 VS Code에서 열고, 수정 내용을 확인한 뒤 업로드할 명령입니다.
+최초 저장소 생성이나 원격 연결을 다시 할 필요는 없습니다. 기존 저장소에서 변경 사항을 확인한 뒤 커밋합니다.
 
 ```bash
 git status
-git remote -v
-gh auth status
-git fetch origin
-git status -sb
-node tools/sync-meta.mjs
-node tools/check.mjs --release
-git add .
-git diff --cached
-git commit -m "Update academic website"
-git push origin main
+git diff --stat
+git diff -- assets/js/data.js
 ```
 
-원격 변경이 있다면 내용을 비교·통합한 다음 push합니다. 강제 push는 사용하지 않습니다. Git 작성자 정보가 없다면 본인의 이름과 이메일로 설정합니다. GitHub Settings → Pages → Deploy from a branch → main → /(root)가 현재 배포 설정입니다. 공개 전에 변경 내용을 검토하고, 배포 후 공개 URL의 파일·언어 전환을 확인하세요.
+로컬 화면과 내용이 맞으면:
 
-## 최소 구성과 참고 자료
+```bash
+git add .
+git diff --cached --stat
+git commit -m "Simplify personal research homepage"
+git push
+```
 
-공개 사이트는 `index.html`, `cv.html`, `assets/` 및 Pages·SEO 파일로 동작합니다. `tools/`의 4개 스크립트는 미리보기·데이터 검사·SEO 동기화·브라우저 검사에만 사용합니다. npm이나 빌드 설치는 필요 없습니다.
-
-[Charles Emogor의 프로젝트 페이지](https://charlesemogor.com/projects)와 교수님이 제공한 정적 HTML 예제를 참고하여 프로젝트를 실제 연구 사진과 함께 표시합니다. 이미지 파일을 복제하지 않고 기존 활동 사진 경로를 재사용합니다. `projects[].image`와 `imageAlt`에서 사진·설명을 수정할 수 있습니다. 사용자가 수정한 생체신호 데이터 관심 분야는 유지합니다.
-
-생성된 `.preview/`, Python 캐시, 임시 브라우저·라이브러리는 정리했습니다. 브라우저 검사를 다시 실행하려면 README의 선택적 Playwright 설치가 필요합니다. 자료 ZIP·이전 작업본은 배포 폴더 바깥 `../website-reference/`에 있습니다. `.git`은 변경 이력이므로 삭제하지 마세요.
+커밋 전 staged 파일을 확인하세요. 개인 파일이나 실험용 파일이 함께 들어 있으면 제외합니다. `.git` 폴더를 삭제하거나 `git init`을 다시 하거나 강제 push할 필요가 없습니다. 기존 Pages 게시 브랜치 설정을 그대로 사용합니다.

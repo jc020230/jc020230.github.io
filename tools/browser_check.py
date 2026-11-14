@@ -1,248 +1,285 @@
 #!/usr/bin/env python3
-"""Optional real-browser regression checks. pip install playwright; playwright install chromium.
+"""Check the actual page scripts and responsive layout with Playwright.
 
-Run: python tools/browser_check.py [--axe /path/to/axe.min.js]
-Starts a loopback server, tests actual HTTP URLs, saves evidence in .preview/, then stops.
-No browser or test dependency is used by the published site.
+Normal use: python tools/browser_check.py
+Optional:   python tools/browser_check.py --executable /usr/bin/chromium
+Restricted preview environment: add --inline (no browser URL navigation).
+
+Normal mode starts an HTTP server and uses the shipped relative paths.
+Inline mode injects the same HTML/CSS/JS into an empty browser document and maps
+local images to data URLs for display. This mode cannot verify browser navigation,
+URL persistence, or HTTP resource loading. It is NOT a live-deployment test.
+Dependencies: pip install playwright; python -m playwright install chromium
 """
+from __future__ import annotations
 import argparse
+import base64
 from functools import partial
-from http.server import ThreadingHTTPServer
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
+import mimetypes
 from pathlib import Path
+import re
+import shutil
 from threading import Thread
-
+from urllib.request import urlopen
 from playwright.sync_api import sync_playwright
-from serve import PreviewHandler
 
 ROOT = Path(__file__).resolve().parents[1]
-ARTIFACTS = ROOT / ".preview"
+OUT = ROOT / '.preview'
+WIDTHS = [320, 360, 390, 540, 600, 760, 768, 1024, 1440, 1920]
 
 
-class Handler(PreviewHandler):
-    def translate_path(self, path):
-        # Exercise the same assets under a GitHub project-site style prefix.
-        if path.startswith("/researcher-site/"):
-            path = path[len("/researcher-site"):]
-        return super().translate_path(path)
+def inline_load(page, language: str, cv: bool = False) -> None:
+    html = (ROOT / ('cv.html' if cv else 'index.html')).read_text(encoding='utf-8')
+    html = re.sub(r'<script\b[^>]*src=[^>]*>\s*</script>', '', html, flags=re.I)
+    html = re.sub(r'<link\b[^>]*>', '', html, flags=re.I)
+    css = (ROOT / 'assets/css/style.css').read_text(encoding='utf-8')
+    html = html.replace('</head>', '<style>' + css + '</style></head>')
+    page.set_content(html, wait_until='domcontentloaded')
+    images = {}
+    for path in (ROOT / 'assets').rglob('*'):
+        if path.suffix.lower() in {'.png', '.jpg', '.jpeg', '.webp', '.svg'}:
+            mime = mimetypes.guess_type(path.name)[0] or 'application/octet-stream'
+            images['./' + path.relative_to(ROOT).as_posix()] = 'data:' + mime + ';base64,' + base64.b64encode(path.read_bytes()).decode()
+    page.add_script_tag(content='window.__previewAssets=' + json.dumps(images) + ';' + '''
+    new MutationObserver(() => {
+      for (const img of document.images) {
+        const src=img.getAttribute('src');
+        if(window.__previewAssets[src]) {
+          img.dataset.previewSrc=src; img.loading='eager'; img.src=window.__previewAssets[src];
+        }
+      }
+    }).observe(document, {subtree:true, childList:true, attributes:true, attributeFilter:['src']});
+    ''')
+    page.add_script_tag(content=(ROOT / 'assets/js/data.js').read_text(encoding='utf-8'))
+    page.evaluate('(language)=>{window.SITE_DATA.site.defaultLanguage=language}', language)
+    for name in ('i18n', 'app'):
+        page.add_script_tag(content=(ROOT / f'assets/js/{name}.js').read_text(encoding='utf-8'))
+    page.evaluate('document.fonts.ready')
+    page.evaluate('() => Promise.all([...document.images].filter(i=>i.src).map(i=>i.decode().catch(()=>{})))')
 
+
+class Handler(SimpleHTTPRequestHandler):
     def log_message(self, *args):
         pass
 
+    def translate_path(self, path):
+        if path.startswith('/test-prefix/'):
+            path = path[len('/test-prefix'):]
+        return super().translate_path(path)
 
-def run(base, axe=None):
-    passed, errors, failed_http, console_errors = [], [], [], []
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--inline', action='store_true')
+    parser.add_argument('--executable', default=None)
+    args = parser.parse_args()
+    OUT.mkdir(exist_ok=True)
+    passed, errors, resource_errors = [], [], []
+    server = ThreadingHTTPServer(('127.0.0.1', 0), partial(Handler, directory=str(ROOT)))
+    Thread(target=server.serve_forever, daemon=True).start()
+    base = f'http://127.0.0.1:{server.server_port}/'
 
     def check(condition, label):
         if not condition:
             raise AssertionError(label)
         passed.append(label)
+        print(f"PASS {len(passed)}: {label}", flush=True)
 
-    with sync_playwright() as pw:
-        browser = pw.chromium.launch(headless=True)
-        context = browser.new_context(viewport={"width": 1440, "height": 1000})
-        page = context.new_page()
-        page.on("pageerror", lambda error: errors.append(str(error)))
-        page.on("console", lambda msg: console_errors.append(msg.text) if msg.type == "error" else None)
-        page.on("response", lambda r: failed_http.append(f"{r.status} {r.url}") if r.status >= 400 else None)
-        page.goto(base)
-        data = page.evaluate("window.SITE_DATA")
-        papers = data["publications"]
-        count = lambda: page.locator("#publication-list .paper").count()
-        check(page.locator("html").get_attribute("lang") == data["site"]["defaultLanguage"], "Default language")
-        check(count() == len(papers), "All publications render")
-        check(page.locator('a[href="#"]').count() == 0, "No dummy links")
-        check(page.locator("#demo-notice").is_hidden(), "Real profile has no demo notice")
-        check(page.locator('meta[name="robots"]').get_attribute("content") == "index, follow", "Real profile indexing metadata")
-        check(page.evaluate("[...document.querySelectorAll('a[href^=\"#\"]')].every(a => document.getElementById(a.hash.slice(1)))"), "All section links resolve")
-        check(page.locator('#news-items time[datetime="2026-10"]').count() > 0, "Month precision preserved in HTML")
-        check(page.locator('#news-items time[datetime="2026-11-06"]').count() == 1, "Confirmed seminar date preserved")
-        check(page.locator("#news-items").inner_text().find("Invalid Date") == -1, "Month date renders")
-        page.keyboard.press("Tab")
-        check(page.locator(".skip-link").evaluate("e => e === document.activeElement"), "Keyboard skip link")
-        page.keyboard.press("Enter")
-        check(page.locator("#main-content").evaluate("e => e === document.activeElement"), "Skip link moves focus")
-        page.locator('[data-lang="en"]').click()
-        check(page.locator("html").get_attribute("lang") == "en", "English switching")
-        check("lang=en" in page.url, "Language URL")
-        check("?lang=en" in page.locator(".cv-link").get_attribute("href"), "CV preserves language")
-        check("Academic Portfolio" in page.title(), "Localized title")
-        check(page.locator('meta[property="og:title"]').get_attribute("content") == page.title(), "Localized Open Graph")
-        page.reload()
-        check(page.locator("html").get_attribute("lang") == "en", "Reload retains language")
-        page.goto(base)
-        check(page.locator("html").get_attribute("lang") == "en", "Stored preference")
-        page.goto(base + "?lang=ko")
-        check(page.locator("html").get_attribute("lang") == "ko", "URL overrides saved preference")
-        page.locator('[data-lang="en"]').click()
-        if papers:
-            year = str(max(p["year"] for p in papers))
-            page.locator("#pub-year").select_option(year)
-            check(count() == sum(str(p["year"]) == year for p in papers), "Year filter")
-            page.locator("#pub-type").select_option("journal")
-            check(count() == sum(str(p["year"]) == year and p["type"] == "journal" for p in papers), "Combined year/type filter")
-            page.locator("#pub-search").fill("no-match-zzzz-923")
-            check(count() == 0, "Empty search")
-            page.locator('[data-action="reset-filters"]').click()
-            check(count() == len(papers), "Reset all filters")
-            check(page.locator("#pub-search").evaluate("e => e === document.activeElement"), "Reset restores focus")
-            page.locator("#pub-selected").check()
-            check(count() == sum(p["selected"] for p in papers), "Selected publication filter")
-            page.locator("#pub-selected").uncheck()
-            page.locator("#pub-type").select_option("journal")
-            check(count() == sum(p["type"] == "journal" for p in papers), "Journal filter")
-            page.locator("#pub-type").select_option("all")
-            for query in ["ALS", "Audio", "Jungchan", "2026 speech", "Question Answering"]:
-                page.locator("#pub-search").fill(query)
-                check(count() > 0, f"Bilingual title/author/keyword search: {query}")
-            page.locator("#pub-search").fill("true")
-            check(count() == 0, "Search excludes data flags")
-            page.locator("#pub-search").fill("")
-            page.locator('[data-panel$="-bibtex"]').first.click()
-            page.locator('[data-action="copy-bibtex"]').first.click()
-            page.locator("#toast").wait_for(state="visible")
-            check(page.locator("#toast").is_visible(), "BibTeX copy feedback")
-        check(page.locator("#news-items > li").count() == min(data["site"]["newsLimit"], len(data["news"])), "News starts collapsed")
-        page.locator('[data-action="toggle-news"]').click()
-        check(page.locator("#news-items > li").count() == len(data["news"]), "News expands")
-        joint_news = page.locator("#news-items > li").filter(has_text="DLmath Lab")
-        check(joint_news.locator('p a[href="https://ikwak2.github.io/"]').inner_text() == "CAU ET Lab", "News links CAU ET Lab by name")
-        check(joint_news.locator('p a[href="https://dlmath-lab.github.io/"]').inner_text() == "DLmath Lab", "News links DLmath Lab separately")
-        check(joint_news.locator('p').inner_text() != joint_news.locator('p a').first.inner_text(), "News body is not a paragraph-wide link")
-        check(page.locator(".challenge-row").count() == len(data["awards"]), "All challenge results visible")
-        check("58.33%" in page.locator("#challenges").inner_text() and "57.30%" in page.locator("#challenges").inner_text(), "DCASE track scores visible")
-        check("4th" in page.locator("#challenges").inner_text(), "SAND placing visible")
-        page.locator('[data-action="toggle-news"]').click()
-        page.locator('[data-action="copy-email"]').click()
-        page.locator("#toast").wait_for(state="visible")
-        check(page.locator("#toast").is_visible(), "Email copy feedback")
-        page.evaluate("document.fonts.ready")
-        check(page.evaluate("[...document.fonts].some(f => f.family === 'Pretendard' && f.status === 'loaded')"), "Self-hosted Pretendard loads")
-        photos = [photo for event in data["gallery"] for photo in event["images"]]
-        check(page.locator(".gallery-item").count() == len(data["gallery"]), "All photo events visible")
-        gallery_button = page.locator(".gallery-image").first
-        gallery_button.click()
-        check(page.locator("#photo-dialog").is_visible(), "Photo viewer opens")
-        check(page.locator('[data-action="close-photo"]').evaluate("e => e === document.activeElement"), "Photo viewer receives keyboard focus")
-        for i, photo in enumerate(photos):
-            page.wait_for_function("document.querySelector('#photo-dialog-image').complete && document.querySelector('#photo-dialog-image').naturalWidth > 0")
-            check(page.locator("#photo-dialog-image").get_attribute("src") == photo["src"], f"Photo {i + 1} loads in order")
-            check(page.locator("#photo-dialog-image").get_attribute("alt") == photo["alt"]["en"], f"Photo {i + 1} localized caption")
-            page.keyboard.press("ArrowRight")
-        check(page.locator("#photo-dialog-count").inner_text() == f"1 / {len(photos)}", "Photo navigation wraps")
-        page.locator('[data-action="previous-photo"]').click()
-        check(page.locator("#photo-dialog-count").inner_text() == f"{len(photos)} / {len(photos)}", "Previous photo button")
-        page.locator('[data-action="next-photo"]').click()
-        check(page.locator("#photo-dialog-count").inner_text() == f"1 / {len(photos)}", "Next photo button")
-        page.keyboard.press("Escape")
-        check(page.locator("#photo-dialog").is_hidden() and gallery_button.evaluate("e => e === document.activeElement"), "Escape closes viewer and restores focus")
-        page.set_viewport_size({"width": 390, "height": 844})
-        menu = page.locator("#menu-toggle")
-        menu.click()
-        check(menu.get_attribute("aria-expanded") == "true", "Mobile menu opens")
-        page.keyboard.press("Escape")
-        check(menu.get_attribute("aria-expanded") == "false" and menu.evaluate("e => e === document.activeElement"), "Escape closes menu and restores focus")
-        menu.click()
-        page.locator('[data-nav="contact"]').click()
-        check(menu.get_attribute("aria-expanded") == "false", "Navigation closes mobile menu")
-        menu.click()
-        page.set_viewport_size({"width": 1440, "height": 1000})
-        page.set_viewport_size({"width": 390, "height": 844})
-        page.wait_for_function("document.querySelector('#menu-toggle').getAttribute('aria-expanded') === 'false'")
-        check(True, "Resize resets mobile menu")
-        for prefix in ["", "researcher-site/"]:
-            for filename in ["", "cv.html"]:
-                for lang in ["ko", "en"]:
-                    page.goto(f"{base}{prefix}{filename}?lang={lang}")
-                    for width in [320, 360, 390, 768, 1024, 1051, 1280, 1440]:
-                        page.set_viewport_size({"width": width, "height": 1000})
-                        check(page.evaluate("document.documentElement.scrollWidth <= innerWidth"), f"No overflow: {prefix}{filename or 'home'} {lang} {width}px")
-                    if not prefix:
-                        page.evaluate("document.fonts.ready")
-                        page.screenshot(path=str(ARTIFACTS / f"{filename or 'home'}-{lang}-desktop.png"), full_page=True)
-                        page.set_viewport_size({"width": 390, "height": 844})
-                        page.screenshot(path=str(ARTIFACTS / f"{filename or 'home'}-{lang}-mobile.png"), full_page=True)
-                        if axe:
-                            page.add_script_tag(path=str(axe))
-                            results = page.evaluate("async () => (await axe.run(document, {runOnly: {type:'tag', values:['wcag2a','wcag2aa','wcag21aa']}})).violations")
-                            check(not results, f"axe {filename or 'home'} {lang}: {json.dumps(results, ensure_ascii=False)}")
-                        if not filename:
-                            page.locator(".gallery-image").first.click()
-                            check(page.locator("#photo-dialog-image").get_attribute("alt") == photos[0]["alt"][lang], f"Mobile photo caption {lang}")
-                            check(page.evaluate("document.documentElement.scrollWidth <= innerWidth"), f"Mobile photo viewer no overflow {lang}")
-                            if axe:
-                                results = page.evaluate("async () => (await axe.run(document, {runOnly: {type:'tag', values:['wcag2a','wcag2aa','wcag21aa']}})).violations")
-                                check(not results, f"axe photo viewer {lang}: {json.dumps(results, ensure_ascii=False)}")
-                            page.locator('[data-action="close-photo"]').click()
-        page.goto(base + "cv.html?lang=en")
-        check(page.locator(".paper").count() == len(papers), "CV contains all publications")
-        check(page.locator('.award-list a[href="https://dcase.community/challenge2026/task-audio-dependent-question-answering-results"]').inner_text().startswith("Official results"), "CV award link uses correct resource label")
-        page.evaluate("window.print = () => window.didPrint = true")
-        page.locator("#print-cv").click()
-        check(page.evaluate("window.didPrint === true"), "Print button")
-        page.emulate_media(media="print")
-        check(page.locator(".site-header").is_hidden(), "Print hides toolbar")
-        check(page.locator("#demo-notice").is_hidden(), "Real CV prints without demo notice")
-        page.pdf(path=str(ARTIFACTS / "cv-en.pdf"), format="A4")
-        check((ARTIFACTS / "cv-en.pdf").stat().st_size > 1000, "PDF generated")
-        page.emulate_media(media="screen", reduced_motion="reduce")
-        check(page.evaluate("getComputedStyle(document.documentElement).scrollBehavior") == "auto", "Reduced motion")
-        # Check all shipped assets through root and nested HTTP routes.
-        for prefix in ["", "researcher-site/"]:
-            for name in ["index.html", "cv.html", "assets/css/style.css", "assets/js/data.js", "assets/js/i18n.js", "assets/js/app.js", "assets/images/favicon.svg", ".nojekyll", "robots.txt", "sitemap.xml", "assets/images/profile.png", "assets/files/korean-statistical-society-2026-als-abstract.pdf", "assets/files/dcase-2026-task5-judges-award.webp", "assets/fonts/PretendardVariable.woff2", "assets/fonts/OFL.txt", *[photo["src"].removeprefix("./") for photo in photos]]:
-                response = context.request.get(base + prefix + name)
-                check(response.status == 200, f"HTTP asset: {prefix}{name}")
-                check("no-store" in response.headers.get("cache-control", ""), f"Preview cache header: {prefix}{name}")
-        check(not errors, f"No uncaught JavaScript errors: {errors}")
-        check(not failed_http, f"No failed page resources: {failed_http}")
-        check(not console_errors, f"No browser console errors: {console_errors}")
-        # Fault fixtures affect this isolated browser response, never source files.
-        original = (ROOT / "assets/js/data.js").read_text()
-        def fixture(extra):
-            ctx = browser.new_context()
-            p = ctx.new_page()
-            p.on("pageerror", lambda error: errors.append(str(error)))
-            p.route("**/assets/js/data.js", lambda route: route.fulfill(content_type="text/javascript", body=original + "\n" + extra))
-            return ctx, p
-        ctx, p = fixture("['news','publications','projects','education','experience','awards'].forEach(k => SITE_DATA[k] = []);")
-        for url in [base, base + "cv.html"]:
-            p.goto(url)
-            check("등록된" in p.locator("main").inner_text(), "Empty collections render gracefully: " + url)
-        ctx.close()
-        ctx, p = fixture("SITE_DATA.profile.photo=''; SITE_DATA.profile.name = '<img src=x onerror=alert(1)>'; SITE_DATA.profile.links=[{label:'unsafe',url:'javascript:alert(1)'}]; SITE_DATA.publications[0].links={pdf:'./assets/files/README.md',code:'https://github.com/jc020230',project:'#projects'};")
-        p.goto(base)
-        check(p.locator("#profile img").count() == 0 and "<img" in p.locator(".profile-name").inner_text(), "HTML escaped")
-        check(p.locator('a[href^="javascript:"]').count() == 0, "Unsafe URL rejected")
-        check(p.locator('.paper-actions a[href="./assets/files/README.md"]').count() == 1, "PDF link supported")
-        check(p.locator('.paper-actions a[href="#projects"]').count() == 1, "Project link supported")
-        check(p.locator('.paper-actions a[href="https://github.com/jc020230"]').get_attribute("rel") == "noopener noreferrer", "External Code link protected")
-        ctx.close()
-        ctx, p = fixture("SITE_DATA.site.showDemoNotice=false; SITE_DATA.profile.example=true;")
-        p.goto(base)
-        check(p.locator("#demo-notice").is_visible(), "Record flags prevent accidentally hiding examples")
-        ctx.close()
-        ctx = browser.new_context()
-        p = ctx.new_page()
-        p.add_init_script("Storage.prototype.getItem = () => {throw Error('disabled')}; Storage.prototype.setItem = () => {throw Error('disabled')};")
-        p.goto(base + "?lang=invalid")
-        p.locator('[data-lang="en"]').click()
-        check(p.locator("html").get_attribute("lang") == "en", "Language switching with blocked storage")
-        ctx.close()
-        check(not errors, f"No JavaScript errors including fault fixtures: {errors}")
-        browser.close()
-    (ARTIFACTS / "browser-results.json").write_text(json.dumps({"passed": len(passed), "checks": passed, "errors": errors, "console_errors": console_errors, "failed_http": failed_http}, ensure_ascii=False, indent=2))
-    print(f"PASS: {len(passed)} browser checks; evidence: {ARTIFACTS}")
+    def http_paths():
+        files = [ROOT/'index.html', ROOT/'cv.html', ROOT/'robots.txt', ROOT/'sitemap.xml']
+        files += [p for p in (ROOT/'assets').rglob('*') if p.is_file() and p.suffix in {'.js','.css','.png','.webp','.svg','.pdf'}]
+        for file in files:
+            with urlopen(base + file.relative_to(ROOT).as_posix(), timeout=10) as response:
+                check(response.status == 200 and len(response.read()) == file.stat().st_size,
+                      f'HTTP file bytes: {file.relative_to(ROOT)}')
 
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--axe", type=Path)
-    args = parser.parse_args()
-    ARTIFACTS.mkdir(exist_ok=True)
-    server = ThreadingHTTPServer(("127.0.0.1", 0), partial(Handler, directory=str(ROOT)))
-    Thread(target=server.serve_forever, daemon=True).start()
     try:
-        run(f"http://127.0.0.1:{server.server_port}/", args.axe)
+        http_paths()
+        with sync_playwright() as pw:
+            executable = args.executable or shutil.which('chromium') or shutil.which('chromium-browser')
+            options = {'headless': True}
+            if executable:
+                options['executable_path'] = executable
+            browser = pw.chromium.launch(**options)
+            context = browser.new_context(viewport={'width':1440,'height':1000})
+
+            def load(page, lang='ko', cv=False, prefix=''):
+                if args.inline:
+                    inline_load(page, lang, cv)
+                else:
+                    page.goto(base + prefix + ('cv.html' if cv else 'index.html') + '?lang=' + lang)
+                    page.evaluate('document.fonts.ready')
+
+            page = context.new_page()
+            page.on('pageerror', lambda err: errors.append(str(err)))
+            if not args.inline:
+                page.on('response', lambda response: resource_errors.append(f'{response.status} {response.url}') if response.status >= 400 else None)
+            load(page)
+            data = page.evaluate('window.SITE_DATA')
+            papers = data['publications']
+            count = lambda: page.locator('#publication-list .paper').count()
+            check(count() == len(papers), 'All publication records render')
+            check(page.locator('h1').count() == 1, 'One main heading')
+            check(page.locator('#about-heading').inner_text() == data['profile']['name']['ko'], 'Name is the opening heading')
+            check(page.locator('#about').evaluate('(e)=>e.getBoundingClientRect().height>0'), 'About anchor has a scroll target')
+            check(page.locator('#demo-notice').is_hidden(), 'No demo banner')
+            check(page.locator('a[href="#"]').count() == 0, 'No dummy links')
+            check(page.evaluate('[...document.querySelectorAll("a")].filter(a=>(a.getAttribute("href")||"").startsWith("#")).every(a=>document.getElementById(a.getAttribute("href").slice(1)))'), 'All local section anchors resolve')
+            check(page.locator('#publication-tools').get_attribute('open') is None, 'Filters start collapsed')
+            check(page.locator('.selected-label,.brand-mark').count() == 0, 'No selected/monogram badges')
+            check(page.locator('.challenge-rank').all_text_contents() == [a['rank'] for a in data['awards']], 'Prominent award ranks retained')
+            check(page.locator('.challenge-rank').first.evaluate('(e)=>parseFloat(getComputedStyle(e).fontSize)>=34'), 'Rank text is prominent')
+            check(page.locator('[data-nav=projects]').get_attribute('href') == '#projects', 'Projects navigation link')
+            check(page.locator('.challenge-row').count() == len(data['awards']), 'All award records remain')
+            check(page.locator('.gallery-item').count() == len(data['gallery']), 'All photo albums remain')
+            check(page.locator('.profile-photo').evaluate('(i)=>i.naturalWidth>0'), 'Profile photo loads')
+            check(page.locator('#news-items > li').count() == min(data['site']['newsLimit'],len(data['news'])), 'Recent-news limit')
+            check(page.locator('a').filter(has_text='Google Scholar').count() == 0, 'No invented Scholar link')
+            check(not re.search(r'출생|고등학교|군 복무', page.locator('body').inner_text()), 'Excluded personal details absent')
+
+            # Keyboard navigation is exercised against the actual DOM.
+            page.keyboard.press('Tab')
+            check(page.locator('.skip-link').evaluate('(e)=>e===document.activeElement'), 'Skip link receives first keyboard focus')
+            if not args.inline:
+                page.keyboard.press('Enter')
+                check(page.locator('#main-content').evaluate('(e)=>e===document.activeElement'), 'Skip link targets main content')
+            else:
+                check(page.locator('.skip-link').get_attribute('href') == '#main-content', 'Skip link target attribute')
+            page.locator('[data-lang="en"]').click()
+            check(page.locator('html').get_attribute('lang') == 'en', 'English switching')
+            check('Research homepage' in page.title(), 'English page title')
+            check(page.locator('.cv-link').get_attribute('href').endswith('?lang=en'), 'CV link preserves language')
+            if not args.inline:
+                check('lang=en' in page.url, 'Language parameter changes')
+                page.reload()
+                check(page.locator('html').get_attribute('lang')=='en', 'Language persists on reload')
+                page.goto(base)
+                check(page.locator('html').get_attribute('lang')=='en', 'Language persists in local storage')
+                page.goto(base+'?lang=ko')
+                check(page.locator('html').get_attribute('lang')=='ko', 'Explicit language overrides saved preference')
+                page.locator('[data-lang="en"]').click()
+
+            page.locator('#publication-tools > summary').click()
+            check(page.locator('#pub-search').is_visible(), 'Search panel opens')
+            page.locator('#pub-search').fill('ALS')
+            check(count() == 2, 'ALS search returns two source records')
+            page.locator('#pub-search').fill('2026 speech')
+            check(count() == 2, 'Multi-term search')
+            page.locator('[data-lang="ko"]').click()
+            check(page.locator('#pub-search').input_value() == '2026 speech' and count()==2, 'Search survives language switch')
+            check(page.locator('#pub-search').is_visible(), 'Filter panel stays open when switching language')
+            page.locator('#pub-search').fill('')
+            page.locator('#pub-type').select_option('conference')
+            check(count()==1, 'Conference filter')
+            page.locator('#pub-type').select_option('journal')
+            check(count()==2, 'Journal filter')
+            page.locator('#pub-year').select_option('2026')
+            check(count()==2, 'Combined year/type filter')
+            page.locator('#pub-type').select_option('all')
+            page.locator('#pub-selected').check()
+            check(count()==sum(bool(p['selected']) for p in papers), 'Selected filter retained')
+            page.locator('#pub-selected').uncheck()
+            page.locator('#pub-search').fill('no-such-paper-049358')
+            check(count()==0, 'No-result state')
+            page.locator('[data-action="reset-filters"]').click()
+            check(count()==len(papers), 'Reset restores all publications')
+            check(page.locator('#pub-search').evaluate('(e)=>e===document.activeElement'), 'Reset restores search focus')
+            bib = page.locator('[data-panel$="-bibtex"]').first
+            bib.click()
+            check(page.locator('.bib-panel').first.is_visible(), 'BibTeX expands')
+            page.locator('[data-action="copy-bibtex"]').first.click()
+            page.locator('#toast').wait_for(state='visible')
+            check(page.locator('#toast').is_visible(), 'Copy feedback is visible (success/fallback)')
+            bib.click()
+            check(page.locator('.bib-panel').first.is_hidden(), 'BibTeX collapses')
+            page.locator('#publication-tools > summary').click()
+            page.locator('[data-action="toggle-news"]').click()
+            check(page.locator('#news-items > li').count()==len(data['news']), 'All news records expand')
+            pdf = page.locator('#news a[href$="korean-statistical-society-2026-als-abstract.pdf"]')
+            check(pdf.count()==1, 'Proceedings abstract PDF link retained')
+            check(page.locator('#news-items time[datetime="2026-11-06"]').count()==1, 'Source news date precision preserved')
+            check(page.locator('#news-items').inner_text().find('Invalid Date')<0, 'Dates format successfully')
+            photo = page.locator('#news [data-action="open-photo"]').first
+            photo.click()
+            check(page.locator('#photo-dialog').evaluate('(e)=>e.open'), 'News photo dialog opens')
+            expected_photos = sum(len(event['images']) for event in data['gallery'])
+            check(page.locator('#photo-dialog-count').inner_text().endswith(f'/ {expected_photos}'), 'All original photos remain in dialog')
+            previous = page.locator('#photo-dialog-count').inner_text()
+            page.keyboard.press('ArrowRight')
+            check(page.locator('#photo-dialog-count').inner_text()!=previous, 'Next-photo keyboard control')
+            page.keyboard.press('ArrowLeft')
+            check(page.locator('#photo-dialog-count').inner_text()==previous, 'Previous-photo keyboard control')
+            page.keyboard.press('Escape')
+            check(not page.locator('#photo-dialog').evaluate('(e)=>e.open'), 'Escape closes photo dialog')
+            check(photo.evaluate('(e)=>e===document.activeElement'), 'Dialog returns focus')
+            page.locator('[data-action="toggle-news"]').click()
+            page.locator('.gallery-image').first.click()
+            check(page.locator('#photo-dialog').evaluate('(e)=>e.open'), 'Gallery photo dialog opens')
+            for _ in range(expected_photos):
+                page.locator('[data-action="next-photo"]').click()
+                page.evaluate('() => document.getElementById("photo-dialog-image").decode()')
+                check(page.locator('#photo-dialog-image').evaluate('(e)=>e.naturalWidth>0'), 'Photo navigation loads the original image')
+            page.locator('[data-action="close-photo"]').click()
+            page.locator('[data-action="copy-email"]').click()
+            page.locator('#toast').wait_for(state='visible')
+            check(page.locator('#toast').is_visible(), 'Email copy feedback')
+            page.set_viewport_size({'width':390,'height':844})
+            page.locator('#menu-toggle').click()
+            check(page.locator('#menu-toggle').get_attribute('aria-expanded')=='true', 'Mobile menu opens')
+            page.keyboard.press('Escape')
+            check(page.locator('#menu-toggle').get_attribute('aria-expanded')=='false', 'Mobile menu closes with Escape')
+            if not args.inline:
+                page.locator('#menu-toggle').click()
+                page.locator('#primary-nav a[href="#about"]').click()
+                check(page.locator('#menu-toggle').get_attribute('aria-expanded')=='false', 'Choosing an anchor closes mobile menu')
+            check(page.locator('#about').evaluate('(e)=>e.getBoundingClientRect().height>0'), 'Mobile About retains a real section box')
+            page.close()
+
+            # Responsive matrix: each of two languages, two pages, and ten widths.
+            for lang in ['ko','en']:
+                for cv in [False,True]:
+                    page=context.new_page()
+                    page.on('pageerror',lambda error: errors.append(str(error)))
+                    load(page,lang,cv)
+                    for width in WIDTHS:
+                        page.set_viewport_size({'width':width,'height':1000})
+                        page.wait_for_timeout(20)
+                        check(page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'),f'No overflow: {lang}/{"cv" if cv else "home"}/{width}')
+                        check(page.locator('h1').count()==1,f'Main heading retained: {lang}/{"cv" if cv else "home"}/{width}')
+                        if not cv and width<=760:
+                            page.locator('#menu-toggle').click()
+                            check(page.evaluate('document.documentElement.scrollWidth<=innerWidth+1'),f'Open menu fits: {lang}/{width}')
+                            page.locator('#menu-toggle').click()
+                        if width in [390,1440]:
+                            stem=f'{"cv" if cv else "home"}-{lang}-{width}'
+                            page.screenshot(path=str(OUT/f'{stem}.png'),full_page=True)
+                    if cv:
+                        check(page.locator('.cv-publications > li').count()==len(papers),f'{lang}: CV publication count')
+                        check(page.locator('.award-list > li').count()==len(data['awards']),f'{lang}: CV awards retained')
+                        check(page.locator('#home-link').get_attribute('href').endswith('?lang='+lang),f'{lang}: CV home link preserves language')
+                        page.emulate_media(media='print')
+                        check(page.locator('.site-header').is_hidden(),f'{lang}: CV print toolbar hidden')
+                        check(page.locator('.cv-title-block').is_visible(),f'{lang}: CV print content visible')
+                    page.close()
+            if not args.inline:
+                page=context.new_page()
+                load(page,'en',prefix='test-prefix/')
+                check(page.locator('.paper').count()==len(papers),'Project-subdirectory URL renders papers')
+                check(page.locator('.profile-photo').evaluate('(e)=>e.naturalWidth>0'),'Project-subdirectory portrait path')
+                page.close()
+            check(not errors, 'No JavaScript runtime errors')
+            if not args.inline:
+                check(not resource_errors,'No failed HTTP responses in browser')
+            browser.close()
     finally:
         server.shutdown()
         server.server_close()
+    report={'mode':'inline-rendering' if args.inline else 'http-browser', 'checks_passed':len(passed),'responsive_cases':2*2*len(WIDTHS),'javascript_errors':errors,'failed_browser_responses':resource_errors if not args.inline else 'Not tested in inline mode','checks':passed}
+    (OUT/'results.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf-8')
+    print(json.dumps({k:v for k,v in report.items() if k!='checks'},ensure_ascii=False,indent=2))
+
+
+if __name__ == '__main__':
+    main()

@@ -155,7 +155,7 @@ for (const page of ["index.html", "cv.html"]) {
   for (const match of html.matchAll(/(?:src|href)="(\.\/[^\"]+)"/g)) checkURL(match[1], `${page}: resource`);
 }
 assert(fs.existsSync(path.join(root, ".nojekyll")), ".nojekyll is missing from the website root.");
-for (const file of ["assets/fonts/PretendardVariable.woff2", "assets/fonts/OFL.txt"]) checkURL(`./${file}`, "Self-hosted font");
+// Typography uses system fonts. No downloaded font files are required.
 const metadata = spawnSync(process.execPath, [path.join(root, "tools/sync-meta.mjs"), "--check"], { encoding: "utf8" });
 assert(metadata.status === 0, `Static metadata is out of sync or invalid. Run node tools/sync-meta.mjs.\n${metadata.stderr || ""}`);
 
