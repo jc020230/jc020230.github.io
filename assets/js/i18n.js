@@ -1,6 +1,9 @@
 /* 메뉴와 버튼 번역. 연구 내용은 data.js에서 수정하세요. */
 window.SITE_I18N = {
   ko: {
+    challenges: "Challenge & 수상", challengeIntro: "오디오 이해와 음성 분석 분야의 팀 연구 성과입니다.",
+    gallery: "연구 활동 · 사진", galleryIntro: "학회 포스터 발표부터 세미나, 공동 연구 발표까지.",
+    viewPhotos: "사진 보기", photosCount: "장", closePhotos: "닫기", previousPhoto: "이전 사진", nextPhoto: "다음 사진", certificate: "DCASE Judge’s Award 상장", details: "자세히 보기",
     skip: "본문으로 바로가기", navLabel: "주요 메뉴", menu: "메뉴 열기", closeMenu: "메뉴 닫기",
     about: "소개", news: "연구 소식", publications: "연구 성과", projects: "프로젝트",
     experience: "학력·경력", contact: "연락처", cv: "CV 보기", home: "홈으로",
@@ -25,6 +28,9 @@ window.SITE_I18N = {
     noEntries: "등록된 내용이 없습니다.", noscript: "이 사이트는 JavaScript를 사용합니다. 브라우저에서 JavaScript를 허용해주세요."
   },
   en: {
+    challenges: "Challenges & Awards", challengeIntro: "Team achievements in audio understanding and speech analysis.",
+    gallery: "Research in pictures", galleryIntro: "Poster presentations, seminars, and moments of shared research.",
+    viewPhotos: "View photos", photosCount: "photos", closePhotos: "Close", previousPhoto: "Previous photo", nextPhoto: "Next photo", certificate: "DCASE Judge’s Award certificate", details: "Details",
     skip: "Skip to content", navLabel: "Main navigation", menu: "Open menu", closeMenu: "Close menu",
     about: "About", news: "News", publications: "Publications", projects: "Projects",
     experience: "Education & Experience", contact: "Contact", cv: "View CV", home: "Back home",

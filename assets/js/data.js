@@ -1,5 +1,6 @@
-/** 실제 연구자 정보. 소식 날짜는 YYYY-MM 또는 YYYY-MM-DD.
- * 월만 확인된 경우 임의의 일자를 넣지 않습니다. 수정 후 tools/sync-meta.mjs 실행. */
+/** 실제 연구자 정보. 텍스트 내 기관 링크: entities. 소식 자료 링크: resources.
+ * 사진은 gallery의 행사별 images에서 관리합니다. 날짜는 YYYY-MM 또는 YYYY-MM-DD.
+ * 수정 후 node tools/sync-meta.mjs 실행. */
 window.SITE_DATA = {
   "site": {
     "url": "https://jc020230.github.io/",
@@ -13,7 +14,8 @@ window.SITE_DATA = {
     "description": {
       "ko": "류정찬 · 중앙대학교 통계데이터사이언스학과 석사과정. 오디오 질의응답, 오디오·비전·언어 모델과 음성 분석 연구.",
       "en": "Jungchan Ryu, M.S. student in Statistics and Data Science at Chung-Ang University. Audio question answering, audio-vision-language models, and speech analysis."
-    }
+    },
+    "newsLimit": 5
   },
   "profile": {
     "example": false,
@@ -113,7 +115,7 @@ window.SITE_DATA = {
   "news": [
     {
       "example": false,
-      "date": "2026-11",
+      "date": "2026-11-06",
       "category": {
         "ko": "세미나",
         "en": "Seminar"
@@ -122,7 +124,9 @@ window.SITE_DATA = {
         "ko": "데이터사이언스융합연구소 세미나에서 연구 내용을 발표했습니다.",
         "en": "Gave a research presentation at a Data Science Convergence Research Institute seminar."
       },
-      "url": ""
+      "url": "",
+      "resources": [],
+      "galleryId": "data-science"
     },
     {
       "example": false,
@@ -135,7 +139,16 @@ window.SITE_DATA = {
         "ko": "CAU 팀이 DCASE 2026 Challenge Task 5에서 Overall 및 Lightweight 부문 모두 1위를 달성했습니다.",
         "en": "Our CAU team won first place in both the Overall and Lightweight categories of Task 5 at the DCASE 2026 Challenge."
       },
-      "url": "https://dcase.community/challenge2026/task-audio-dependent-question-answering"
+      "url": "",
+      "resources": [
+        {
+          "label": {
+            "ko": "공식 순위",
+            "en": "Official results"
+          },
+          "url": "https://dcase.community/challenge2026/task-audio-dependent-question-answering-results"
+        }
+      ]
     },
     {
       "example": false,
@@ -145,10 +158,19 @@ window.SITE_DATA = {
         "en": "Award"
       },
       "text": {
-        "ko": "DCASE 2026 Task 5의 연구 「Audio-Grounded Hard-Example Training with Acoustic Tagging for Audio-Dependent Question Answering」으로 Judge’s Award를 수상했습니다. (상장 보기)",
-        "en": "Received the Judge’s Award for “Audio-Grounded Hard-Example Training with Acoustic Tagging for Audio-Dependent Question Answering” at DCASE 2026 Task 5. (View certificate)"
+        "ko": "DCASE 2026 Task 5에서 CAU 팀의 연구가 Judge’s Award를 공동 수상했습니다.",
+        "en": "Our CAU team received the Judge’s Award for our work on DCASE 2026 Task 5."
       },
-      "url": "./assets/files/dcase-2026-task5-judges-award.webp"
+      "url": "",
+      "resources": [
+        {
+          "label": {
+            "ko": "상장 보기",
+            "en": "View certificate"
+          },
+          "url": "./assets/files/dcase-2026-task5-judges-award.webp"
+        }
+      ]
     },
     {
       "example": false,
@@ -161,7 +183,9 @@ window.SITE_DATA = {
         "ko": "중앙대학교 CAU ET Lab과 고려대학교 DLmath Lab 합동 세미나에서 발표했습니다.",
         "en": "Presented at the joint seminar of CAU ET Lab (Chung-Ang University) and DLmath Lab (Korea University)."
       },
-      "url": "https://dlmath-lab.github.io/"
+      "url": "",
+      "resources": [],
+      "galleryId": "joint-seminar"
     },
     {
       "example": false,
@@ -171,23 +195,42 @@ window.SITE_DATA = {
         "en": "Conference"
       },
       "text": {
-        "ko": "한국통계학회 2026년 하계학술논문발표회에서 「음성 기반 ALS 중증도 예측을 위한 하이브리드 특징 기반 딥러닝 기법」을 발표했습니다. (프로시딩 초록 PDF)",
-        "en": "Presented “A Deep Learning Approach Using Hybrid Features for ALS Severity Prediction from Speech” at the 2026 Korean Statistical Society Summer Meeting. (Proceedings abstract PDF)"
+        "ko": "한국통계학회 2026년 하계학술논문발표회에서 음성 기반 ALS 중증도 예측 연구를 포스터로 발표했습니다.",
+        "en": "Presented our research on speech-based ALS severity prediction at the 2026 Korean Statistical Society Summer Meeting."
       },
-      "url": "./assets/files/korean-statistical-society-2026-als-abstract.pdf"
+      "url": "",
+      "resources": [
+        {
+          "label": {
+            "ko": "프로시딩 초록 PDF",
+            "en": "Proceedings abstract"
+          },
+          "url": "./assets/files/korean-statistical-society-2026-als-abstract.pdf"
+        }
+      ],
+      "galleryId": "statistics"
     },
     {
       "example": false,
-      "date": "2026-11-14",
+      "date": "2026-10-31",
       "category": {
         "ko": "논문",
         "en": "Publication"
       },
       "text": {
-        "ko": "ALS 음성 평가 벤치마크 논문의 학술지 페이지를 추가했습니다.",
-        "en": "Added the journal article page for our ALS speech assessment benchmark."
+        "ko": "ALS 음성 평가 벤치마크 논문이 응용통계연구 39권 5호에 게재되었습니다.",
+        "en": "Our ALS speech assessment benchmark was published in The Korean Journal of Applied Statistics, 39(5)."
       },
-      "url": "https://www.kjas.or.kr/journal/view.html?uid=278&vmd=Full"
+      "url": "",
+      "resources": [
+        {
+          "label": {
+            "ko": "논문 · DOI",
+            "en": "Article · DOI"
+          },
+          "url": "https://doi.org/10.5351/KJAS.2026.39.5.537"
+        }
+      ]
     },
     {
       "example": false,
@@ -200,7 +243,17 @@ window.SITE_DATA = {
         "ko": "DCASE 2026 Workshop 공동저자 논문이 공개되었습니다.",
         "en": "Our coauthored paper is available in the DCASE 2026 Workshop proceedings."
       },
-      "url": "https://dcase.community/documents/workshop2026/proceedings/DCASE2026Workshop_Jun_36.pdf"
+      "url": "",
+      "resources": [
+        {
+          "label": {
+            "ko": "워크숍 논문",
+            "en": "Workshop paper"
+          },
+          "url": "https://dcase.community/documents/workshop2026/proceedings/DCASE2026Workshop_Jun_36.pdf"
+        }
+      ],
+      "galleryId": "dcase"
     },
     {
       "example": false,
@@ -213,7 +266,16 @@ window.SITE_DATA = {
         "ko": "중앙대학교 통계데이터사이언스학과 석사과정을 시작했습니다.",
         "en": "Started the M.S. program in Statistics and Data Science at Chung-Ang University."
       },
-      "url": "https://ikwak2.github.io/students/index.html"
+      "url": "",
+      "resources": [
+        {
+          "label": {
+            "ko": "연구실 소개",
+            "en": "Lab profile"
+          },
+          "url": "https://ikwak2.github.io/students/index.html"
+        }
+      ]
     }
   ],
   "publications": [
@@ -401,7 +463,7 @@ window.SITE_DATA = {
         "ALS"
       ],
       "links": {
-        "project": "https://ikwak2.github.io/index.html"
+        "paper": "https://doi.org/10.5351/KJAS.2026.39.5.537"
       }
     }
   ],
@@ -482,8 +544,15 @@ window.SITE_DATA = {
         "en": "DCASE 2026 Task 5 · 1st Place in Both Overall and Lightweight Tracks"
       },
       "organization": {
-        "ko": "CAU 팀 공동 성과 · Overall 58.33%, Lightweight (<10B) 57.30%",
-        "en": "CAU team achievement · Overall 58.33%, Lightweight (<10B) 57.30%"
+        "ko": "CAU 팀 공동 성과 · Overall 58.33%, Lightweight 57.30%",
+        "en": "CAU team achievement · Overall 58.33%, Lightweight 57.30%"
+      },
+      "rank": "1st",
+      "subtitle": "DCASE 2026 · Task 5",
+      "url": "https://dcase.community/challenge2026/task-audio-dependent-question-answering-results",
+      "linkLabel": {
+        "ko": "공식 순위",
+        "en": "Official results"
       }
     },
     {
@@ -497,7 +566,14 @@ window.SITE_DATA = {
         "ko": "Audio-Grounded Hard-Example Training with Acoustic Tagging for Audio-Dependent Question Answering · 공동 수상",
         "en": "Audio-Grounded Hard-Example Training with Acoustic Tagging for Audio-Dependent Question Answering · Team award"
       },
-      "url": "./assets/files/dcase-2026-task5-judges-award.webp"
+      "url": "./assets/files/dcase-2026-task5-judges-award.webp",
+      "rank": "Award",
+      "subtitle": "DCASE 2026 · Task 5",
+      "linkLabel": {
+        "ko": "상장 보기",
+        "en": "View certificate"
+      },
+      "image": "./assets/files/dcase-2026-task5-judges-award.webp"
     },
     {
       "example": false,
@@ -509,6 +585,13 @@ window.SITE_DATA = {
       "organization": {
         "ko": "CAU 팀 공동 성과",
         "en": "Team achievement · CAU"
+      },
+      "rank": "4th",
+      "subtitle": "ICASSP · SAND Challenge",
+      "url": "https://www.sand.icar.cnr.it/",
+      "linkLabel": {
+        "ko": "대회 홈페이지",
+        "en": "Challenge website"
       }
     }
   ],
@@ -521,5 +604,174 @@ window.SITE_DATA = {
       "ko": "공동 연구, 프로젝트, 연구 내용에 관한 문의는 이메일로 보내주세요. 관심 있는 주제와 간단한 소개를 함께 보내주시면 좋습니다.",
       "en": "For research collaborations, projects, or questions about my work, please get in touch by email with a brief introduction and your topic of interest."
     }
-  }
+  },
+  "entities": [
+    {
+      "labels": [
+        "CAU ET Lab",
+        "CAU ET LAB"
+      ],
+      "url": "https://ikwak2.github.io/"
+    },
+    {
+      "labels": [
+        "DLmath Lab",
+        "DLmath LAB"
+      ],
+      "url": "https://dlmath-lab.github.io/"
+    },
+    {
+      "labels": [
+        "곽일엽 교수",
+        "Prof. Il-Youp Kwak"
+      ],
+      "url": "https://ikwak2.github.io/aboutme.html"
+    },
+    {
+      "labels": [
+        "중앙대학교",
+        "Chung-Ang University"
+      ],
+      "url": "https://www.cau.ac.kr/"
+    },
+    {
+      "labels": [
+        "한국통계학회",
+        "Korean Statistical Society"
+      ],
+      "url": "https://www.kss.or.kr/"
+    }
+  ],
+  "gallery": [
+    {
+      "id": "data-science",
+      "date": "2026-11-06",
+      "title": {
+        "ko": "데이터사이언스융합연구소 세미나",
+        "en": "Statistics & Data Science Seminar"
+      },
+      "description": {
+        "ko": "음성 기반 ALS 분석 연구 발표",
+        "en": "Presenting research on speech-based ALS analysis"
+      },
+      "sourceLabel": {
+        "ko": "발표 사진 · 행사 포스터",
+        "en": "Presentation · event program"
+      },
+      "sourceUrl": "",
+      "images": [
+        {
+          "src": "./assets/images/activity/data-science-seminar.webp",
+          "alt": {
+            "ko": "데이터사이언스융합연구소 세미나 발표 현장",
+            "en": "Research presentation at the Statistics & Data Science Seminar"
+          },
+          "width": 1058,
+          "height": 1411
+        },
+        {
+          "src": "./assets/images/activity/data-science-program.webp",
+          "alt": {
+            "ko": "2026년 11월 6일 세미나 행사 포스터",
+            "en": "Seminar program, November 6, 2026"
+          },
+          "width": 1060,
+          "height": 1500
+        }
+      ]
+    },
+    {
+      "id": "dcase",
+      "date": "2026-10",
+      "title": {
+        "ko": "DCASE 2026 Workshop",
+        "en": "DCASE 2026 Workshop"
+      },
+      "description": {
+        "ko": "CAU 팀 발표 · Boston, USA",
+        "en": "CAU team presentation · Boston, USA"
+      },
+      "sourceLabel": {
+        "ko": "사진: CAU ET Lab",
+        "en": "Photo: CAU ET Lab"
+      },
+      "sourceUrl": "https://ikwak2.github.io/photos/index.html",
+      "images": [
+        {
+          "src": "./assets/images/activity/dcase-presentation.webp",
+          "alt": {
+            "ko": "DCASE 2026 Workshop의 CAU 팀 연구 발표",
+            "en": "CAU team presentation at the DCASE 2026 Workshop"
+          },
+          "width": 1400,
+          "height": 1050
+        }
+      ]
+    },
+    {
+      "id": "joint-seminar",
+      "date": "2026-09",
+      "title": {
+        "ko": "CAU ET Lab × DLmath Lab",
+        "en": "CAU ET Lab × DLmath Lab"
+      },
+      "description": {
+        "ko": "중앙대학교·고려대학교 합동 세미나 발표",
+        "en": "Research presentation at the joint lab seminar"
+      },
+      "sourceLabel": {
+        "ko": "발표 사진",
+        "en": "Presentation photo"
+      },
+      "sourceUrl": "",
+      "images": [
+        {
+          "src": "./assets/images/activity/joint-seminar.webp",
+          "alt": {
+            "ko": "CAU ET Lab과 DLmath Lab 합동 세미나 발표 현장",
+            "en": "Presentation at the joint CAU ET Lab and DLmath Lab seminar"
+          },
+          "width": 1050,
+          "height": 1400
+        }
+      ]
+    },
+    {
+      "id": "statistics",
+      "date": "2026-07",
+      "title": {
+        "ko": "한국통계학회 하계학술논문발표회",
+        "en": "Korean Statistical Society Summer Meeting"
+      },
+      "description": {
+        "ko": "음성 기반 ALS 중증도 예측 · 포스터 발표",
+        "en": "Speech-based ALS severity prediction · Poster presentation"
+      },
+      "sourceLabel": {
+        "ko": "발표·학회 참가 사진",
+        "en": "Poster presentation · conference moments"
+      },
+      "sourceUrl": "",
+      "images": [
+        {
+          "src": "./assets/images/activity/statistics-poster.webp",
+          "alt": {
+            "ko": "한국통계학회에서 ALS 연구 포스터를 발표하는 모습",
+            "en": "Presenting the ALS research poster at the Korean Statistical Society meeting"
+          },
+          "width": 1058,
+          "height": 1411
+        },
+        {
+          "src": "./assets/images/activity/statistics-meeting.webp",
+          "alt": {
+            "ko": "한국통계학회 참가자들의 명찰을 모은 기념사진",
+            "en": "Conference moment with participants’ badges at the Korean Statistical Society meeting"
+          },
+          "width": 1058,
+          "height": 1411
+        }
+      ]
+    }
+  ]
 };

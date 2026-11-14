@@ -43,6 +43,7 @@
     <aside class="profile-rail" id="profile" aria-label="연구자 소개"></aside>
     <div class="main-column">
       <section id="about" class="section about-section" aria-labelledby="about-heading"></section>
+      <section id="challenges" class="section" aria-labelledby="challenges-heading"></section>
       <section id="news" class="section" aria-labelledby="news-heading"></section>
       <section id="publications" class="section" aria-labelledby="publications-heading">
         <div id="publications-intro"></div>
@@ -63,12 +64,19 @@
         </form>
         <div id="publication-list"></div>
       </section>
+      <section id="gallery" class="section" aria-labelledby="gallery-heading"></section>
       <section id="projects" class="section" aria-labelledby="projects-heading"></section>
       <section id="experience" class="section" aria-labelledby="experience-heading"></section>
       <section id="contact" class="section contact-section" aria-labelledby="contact-heading"></section>
       <section id="cv" class="section cv-overview" aria-labelledby="cv-heading"></section>
     </div>
   </main>
+  <dialog id="photo-dialog" class="photo-dialog" aria-labelledby="photo-dialog-title">
+    <div class="photo-dialog-header"><h2 id="photo-dialog-title"></h2><button type="button" class="button" data-action="close-photo" data-i18n="closePhotos" autofocus>닫기</button></div>
+    <img id="photo-dialog-image" alt="">
+    <p id="photo-dialog-caption"></p>
+    <div class="photo-dialog-controls"><button type="button" class="button" data-action="previous-photo" data-i18n="previousPhoto">이전 사진</button><span id="photo-dialog-count" aria-live="polite"></span><button type="button" class="button" data-action="next-photo" data-i18n="nextPhoto">다음 사진</button></div>
+  </dialog>
   <footer id="site-footer" class="site-footer"></footer>
   <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
   <noscript><div class="noscript-message">이 홈페이지는 JavaScript를 사용합니다. 브라우저에서 JavaScript를 허용해주세요.<br>This website needs JavaScript enabled to display its content.</div></noscript>

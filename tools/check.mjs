@@ -107,6 +107,32 @@ arr(data.news).forEach((item, i) => {
   const monthOnly = /^\d{4}-\d{2}$/.test(item.date);
   assert(validDate(monthOnly ? `${item.date}-01` : item.date), `news[${i}].date must be a real YYYY-MM or YYYY-MM-DD date.`);
   checkURL(item.url, `news[${i}].url`);
+  arr(item.resources).forEach((resource, j) => {
+    localized(resource.label, `news[${i}].resources[${j}].label`);
+    checkURL(resource.url, `news[${i}].resources[${j}].url`);
+  });
+  if (item.galleryId) assert(arr(data.gallery).some((event) => event.id === item.galleryId), `news[${i}].galleryId: gallery event not found.`);
+});
+assert(Number.isInteger(data.site.newsLimit) && data.site.newsLimit > 0, "site.newsLimit must be a positive integer.");
+arr(data.entities).forEach((entity, i) => {
+  assert(arr(entity.labels).length > 0 && entity.labels.every((label) => typeof label === "string" && label.trim()), `entities[${i}].labels must contain nonempty names.`);
+  checkURL(entity.url, `entities[${i}].url`);
+});
+const galleryIds = new Set();
+arr(data.gallery).forEach((event, i) => {
+  assert(/^[a-z0-9-]+$/.test(event.id) && !galleryIds.has(event.id), `gallery[${i}].id must be unique and use lowercase letters, digits, or hyphens.`);
+  galleryIds.add(event.id);
+  const monthOnly = /^\d{4}-\d{2}$/.test(event.date);
+  assert(validDate(monthOnly ? `${event.date}-01` : event.date), `gallery[${i}].date must be a real YYYY-MM or YYYY-MM-DD date.`);
+  for (const key of ["title", "description", "sourceLabel"]) localized(event[key], `gallery[${i}].${key}`);
+  checkURL(event.sourceUrl, `gallery[${i}].sourceUrl`);
+  assert(arr(event.images).length > 0, `gallery[${i}] needs at least one photo.`);
+  arr(event.images).forEach((photo, j) => {
+    checkURL(photo.src, `gallery[${i}].images[${j}].src`);
+    assert(Boolean(photo.src), `gallery[${i}].images[${j}].src is required.`);
+    localized(photo.alt, `gallery[${i}].images[${j}].alt`);
+    assert(Number.isInteger(photo.width) && photo.width > 0 && Number.isInteger(photo.height) && photo.height > 0, `gallery[${i}].images[${j}]: positive width and height required.`);
+  });
 });
 for (const name of ["education", "experience"]) arr(data[name]).forEach((item, i) => {
   for (const key of ["period", "title", "institution", "description"]) localized(item[key], `${name}[${i}].${key}`);
@@ -115,6 +141,8 @@ arr(data.awards).forEach((item, i) => {
   localized(item.title, `awards[${i}].title`);
   localized(item.organization, `awards[${i}].organization`);
   checkURL(item.url, `awards[${i}].url`);
+  checkURL(item.image, `awards[${i}].image`);
+  for (const key of ["subtitle", "linkLabel"]) if (item[key]) localized(item[key], `awards[${i}].${key}`);
 });
 for (const key of ["headline", "text"]) localized(data.contact?.[key], `contact.${key}`);
 const koKeys = Object.keys(translations.ko).sort();
@@ -125,6 +153,7 @@ for (const page of ["index.html", "cv.html"]) {
   for (const match of html.matchAll(/(?:src|href)="(\.\/[^\"]+)"/g)) checkURL(match[1], `${page}: resource`);
 }
 assert(fs.existsSync(path.join(root, ".nojekyll")), ".nojekyll is missing from the website root.");
+for (const file of ["assets/fonts/PretendardVariable.woff2", "assets/fonts/OFL.txt"]) checkURL(`./${file}`, "Self-hosted font");
 const metadata = spawnSync(process.execPath, [path.join(root, "tools/sync-meta.mjs"), "--check"], { encoding: "utf8" });
 assert(metadata.status === 0, `Static metadata is out of sync or invalid. Run node tools/sync-meta.mjs.\n${metadata.stderr || ""}`);
 
